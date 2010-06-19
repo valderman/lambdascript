@@ -1,0 +1,159 @@
+-- type or constructor
+token TIdent (upper (letter | digit | '_')*) ;
+
+-- variable or type variable
+token VIdent (lower (letter | digit | '_' | '\'')*) ;
+
+-- haskell-style comments
+comment "--" ;
+comment "{-" "-}" ;
+
+-- a program consists of a list of definitions
+Program. Program ::= [Def] ;
+
+-- a definition is either a type definition, a type declaration or a function
+-- definition; type defs end with a semicolon. a function does not, since
+-- every top level expression ends with a semicolon. neither does type
+-- declarations, since that would be just plain ugly; the idea is to insert
+-- enough semicolons to keep consistency and not confuse Happy while still
+-- keeping their use to a minimum.
+TypeDef.  Def ::= NewType ";" ;
+TypeDecl. Def ::= VIdent "::" Type ;
+FunDef.   Def ::= VIdent TopPattern ;
+separator Def "" ;
+
+-- a type, constructor or variable
+VarIdent.  AnyIdent ::= VIdent ;
+TypeIdent. AnyIdent ::= TIdent ;
+
+-- a top pattern can be either a list of patterns followed by "->" and an
+-- expression, or a list of patterns followed by a list of guarded top
+-- expressions.
+TPGuards.   TopPattern ::= [Pattern] [GuardedTopExpr] ;
+TPNoGuards. TopPattern ::= [Pattern] "=" Expr ";" ;
+
+-- a guarded top expression is just a guarded expression followed by "=" and
+-- an expression.
+GuardedTopExpr. GuardedTopExpr ::= GuardExpr "=" Expr ;
+terminator nonempty GuardedTopExpr ";" ;
+
+-- a type can be one of:
+--  simple type:       Type
+--  type variable:     t
+--  parametrized type: (Type t) (must be parenthesized, for now)
+--  list type:         [t]
+--  tuple type:        (t1, t2, ...)
+--  function type:     t1 -> t2
+TParam.    Type2 ::= "(" TIdent [Type] ")" ;
+TSimple.   Type2 ::= TIdent ;
+TVariable. Type2 ::= VIdent ;
+TTuple.    Type2 ::= "(" [TypeC] ")" ;
+TList.     Type2 ::= "[" [TypeC] "]" ;
+TFun.      Type1 ::= Type2 "->" Type1 ;
+coercions Type 2 ;
+separator nonempty Type "" ;
+
+-- comma separated list of types
+TypeC. TypeC ::= Type ;
+separator TypeC "," ;
+
+-- we have to make a production of VIdents, so we can make a list out of them
+AnyVar. AnyVar ::= VIdent ;
+terminator AnyVar "" ;
+
+-- a type definition looks like this:
+--  data Type a1 a2 = Cons1 a1 | Cons2 a2
+NewType. NewType ::= "data" TIdent [AnyVar] "=" [Constructor] ;
+
+-- make a new type production so we can use a non-empty, whitespace-separated
+-- list of them in Constructor
+TypeEmpty. TypeEmpty ::= Type ;
+separator TypeEmpty "" ;
+
+-- a constructor is a constructor followed by any number of types
+Constructor. Constructor ::= TIdent [TypeEmpty] ;
+separator Constructor "|" ;
+
+-- Expressions are also pretty haskell-ish with the exception that any
+-- expression may have its own where-clause, which is specified using curly
+-- brackets. For example, this would be a valid expression:
+-- squareTheSquare x = result {
+--     result = square * square {
+--       square = x * x;
+--     }
+--   };
+-- If a binding clause like this is attached to a lambda expression or an if
+-- expression, the expression must be enclosed in parenthesis or the clause
+-- will be assumed to belong to the body of the lambda or the else part of the
+-- if statement, respectively.
+-- Also, the C-like % operator is used for modulus and no custom operators
+-- are supported. / and % are overloaded for ints and doubles.
+-- Lv. 9: atoms
+EConstr.  Expr9 ::= TIdent ;
+EVar.     Expr9 ::= VIdent ;
+EInt.     Expr9 ::= Integer ;
+EDoub.    Expr9 ::= Double ;
+EStr.     Expr9 ::= String ;
+-- Lv. 8: lists and tuples
+EList.    Expr8 ::= "[" [Expr] "]" ;
+ETuple.   Expr8 ::= "(" [Expr] ")" ;
+-- Lv. 7: function application
+EApp.     Expr7 ::= Expr7 Expr8 ;
+-- Lv. 6: cons
+ECons.    Expr6 ::= Expr7 ":" Expr6 ;
+-- Lv. 5: list and multiplication operators
+EConcat.  Expr5 ::= Expr5 "++" Expr6 ;
+EMul.     Expr5 ::= Expr5 "*" Expr6 ;
+EDiv.     Expr5 ::= Expr5 "/" Expr6 ;
+EMod.     Expr5 ::= Expr5 "%" Expr6 ;
+-- Lv. 4: addition operators
+EAdd.     Expr4 ::= Expr4 "+" Expr5 ;
+ESub.     Expr4 ::= Expr4 "-" Expr5 ;
+-- Lv. 2: comparison operators
+EEq.      Expr2 ::= Expr2 "==" Expr3 ;
+ELT.      Expr2 ::= Expr2 "<"  Expr3 ;
+EGT.      Expr2 ::= Expr2 ">"  Expr3 ;
+ELE.      Expr2 ::= Expr2 "<=" Expr3 ;
+EGE.      Expr2 ::= Expr2 ">=" Expr3 ;
+ENE.      Expr2 ::= Expr2 "!=" Expr3 ;
+-- Lv. 1: case, if, lambdas, etc.
+ELambda.  Expr1 ::= "\\" [Pattern] "->" Expr1 ;
+EIf.      Expr1 ::= "if" Expr "then" Expr "else" Expr ;
+ECase.    Expr1 ::= "case" Expr "of" [CasePattern] ;
+EBinds.   Expr  ::= Expr2 "{" [Def] "}" ;
+coercions Expr 9 ;
+separator Expr "," ;
+
+-- a case pattern can be either a pattern followed by "->" and an expression,
+-- or a pattern followed by a list of guarded case expressions.
+CPGuards.   CasePattern ::= Pattern [GuardedCaseExpr] ;
+CPNoGuards. CasePattern ::= Pattern "->" Expr ";" ;
+terminator nonempty CasePattern "" ;
+
+-- a guarded case expression is just a guarded expression followed by "->" and
+-- an expression.
+GuardedCaseExpr. GuardedCaseExpr ::= GuardExpr "->" Expr ;
+terminator nonempty GuardedCaseExpr ";" ;
+
+
+-- a guard expression is just an expression preceded by a pipe
+GuardExpr. GuardExpr ::= "|" Expr ;
+
+-- patterns look like their haskell equivalents, with the caveat that matching
+-- on constructors requires parentheses around them even when the constructor
+-- takes no arguments. at least for now.
+PID.       Pattern2 ::= VIdent ;
+PInt.      Pattern2 ::= Integer ;
+PDoub.     Pattern2 ::= Double ;
+PString.   Pattern2 ::= String ;
+PChar.     Pattern2 ::= Char ;
+PList.     Pattern2 ::= "[" [PatC] "]" ;
+PTuple.    Pattern2 ::= "(" [PatC] ")" ;
+PConstr.   Pattern2 ::= "(" TIdent [Pattern] ")" ;
+PWildcard. Pattern2 ::= "_" ;
+PCons.     Pattern1 ::= Pattern2 ":" Pattern1 ;
+coercions Pattern 2 ;
+separator Pattern "" ;
+
+PatC. PatC ::= Pattern ;
+separator PatC "," ;
