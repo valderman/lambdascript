@@ -2,6 +2,7 @@
 -- | Type checker monad; provides facilities crucial to type checking and
 --   inference.
 module LambdaScript.TCM (
+    TCM,
     runIn, run, blankEnv,
     pushScope, popScope,
     typeOf, declare
