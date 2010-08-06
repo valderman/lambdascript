@@ -5,7 +5,7 @@ data Tree a
   ;
 
 -- an empty tere
-empty :: Tree a
+empty :: (Tree a)
 empty = Nil;
 
 -- search for a key in a tree
