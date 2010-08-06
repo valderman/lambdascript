@@ -22,10 +22,6 @@ TypeDecl. Def ::= VIdent "::" Type ;
 FunDef.   Def ::= VIdent TopPattern ;
 separator Def "" ;
 
--- a type, constructor or variable
-VarIdent.  AnyIdent ::= VIdent ;
-TypeIdent. AnyIdent ::= TIdent ;
-
 -- a top pattern can be either a list of patterns followed by "->" and an
 -- expression, or a list of patterns followed by a list of guarded top
 -- expressions.
