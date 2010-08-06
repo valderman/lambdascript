@@ -1,7 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- | Type checker monad; provides facilities crucial to type checking and
 --   inference.
-module LambdaScript.TCM where
+module LambdaScript.TCM (
+    runIn, run, blankEnv,
+    pushScope, popScope,
+    typeOf, declare
+  ) where
 import Data.Map as M
 import Control.Monad.State as CMS
 import LambdaScript.Abs as Abs
