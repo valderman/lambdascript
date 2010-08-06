@@ -3,9 +3,9 @@
 --   inference.
 module LambdaScript.TCM (
     TCM,
-    runIn, run, blankEnv,
+    runIn, runIn', run, blankEnv,
     pushScope, popScope,
-    typeOf, declare
+    typeOf, declare, declaredInThisScope
   ) where
 import Data.Map as M
 import Control.Monad.State as CMS
@@ -18,23 +18,29 @@ import LambdaScript.ErrM
 --   declare the same symbol twice in the same scope.
 newtype TCState = TCState {
     env :: [Map String Type]
-  }
+  } deriving Show
 
 newtype TCM a = TCM {
     unTCM :: StateT TCState Err a
   } deriving (Monad, MonadState TCState)
 
--- | Run a type checking computation starting from the given state
+-- | Run a type checking computation starting from the given state.
 runIn :: TCM a -> TCState -> Err a
 runIn (TCM m) st =
   runStateT m st >>= return . fst
 
--- | Run a type checking computation in a blank environment
+-- | Run a type checking computation starting from the given state, returning
+--   the state on computation finish.
+runIn' :: TCM a -> TCState -> Err (a, TCState)
+runIn' (TCM m) st =
+  runStateT m st
+
+-- | Run a type checking computation in a blank environment.
 run :: TCM a -> Err a
 run a =
   a `runIn` blankEnv
 
--- | Blank environment
+-- | Blank environment.
 blankEnv :: TCState
 blankEnv =
   TCState [empty]
@@ -71,11 +77,20 @@ typeOf s = do
             Nothing envs
 
 -- | Declare a symbol to be of a given type. If the symbol was already
---   declared in this scope, we error out. If it was already declared in
---   another scope, the old symbol is shadowed for the lifetime of this scope.
+--   declared in this scope, its type is overwritten. If it was declared
+--   in an outer scope, the old declaration is shadowed by the new one for the
+--   lifetime of the current scope.
 declare :: String -> Type -> TCM ()
 declare s t = do
   TCState (env:envs) <- get
-  case M.lookup s env of
-    Nothing -> put $ TCState $ (insert s t env) : envs
-    _       -> fail $ "Symbol '" ++ s ++ "' already declared in this scope!" 
+  put $ TCState $ (insert s t env) : envs
+
+-- | Check whether the given symbol was declared in the current scope or not.
+--   A symbol with an unknown type is treated as though it hasn't been
+--   declared.
+declaredInThisScope :: String -> TCM Bool
+declaredInThisScope id = do
+  TCState (env:_) <- get
+  case M.lookup id env of
+    Just x | x /= TUnknown -> return True
+    _                      -> return False
