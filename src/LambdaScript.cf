@@ -44,12 +44,16 @@ terminator nonempty GuardedTopExpr ";" ;
 --  list type:         [t]
 --  tuple type:        (t1, t2, ...)
 --  function type:     t1 -> t2
+--
+-- internally, there is also a TUnknown "type" which represents, as the name
+-- suggests, an as of yet undetermined type.
 TParam.    Type2 ::= "(" TIdent [Type] ")" ;
 TSimple.   Type2 ::= TIdent ;
 TVariable. Type2 ::= VIdent ;
 TTuple.    Type2 ::= "(" [TypeC] ")" ;
 TList.     Type2 ::= "[" [TypeC] "]" ;
 TFun.      Type1 ::= Type2 "->" Type1 ;
+internal TUnknown. Type ::= "(Unknown)" ;
 coercions Type 2 ;
 separator nonempty Type "" ;
 
@@ -121,6 +125,8 @@ ELambda.  Expr1 ::= "\\" [Pattern] "->" Expr1 ;
 EIf.      Expr1 ::= "if" Expr "then" Expr "else" Expr ;
 ECase.    Expr1 ::= "case" Expr "of" [CasePattern] ;
 EBinds.   Expr  ::= Expr2 "{" [Def] "}" ;
+-- internal: type annotated expression
+internal ETyped. Expr ::= "(" Expr " :: " Type ")" ;
 coercions Expr 9 ;
 separator Expr "," ;
 
@@ -152,6 +158,8 @@ PTuple.    Pattern2 ::= "(" [PatC] ")" ;
 PConstr.   Pattern2 ::= "(" TIdent [Pattern] ")" ;
 PWildcard. Pattern2 ::= "_" ;
 PCons.     Pattern1 ::= Pattern2 ":" Pattern1 ;
+-- internal: type-annotated pattern
+internal PTyped. Pattern ::= "(" Pattern " :: " Type ")" ;
 coercions Pattern 2 ;
 separator Pattern "" ;
 
