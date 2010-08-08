@@ -47,7 +47,7 @@ TParam.    Type2 ::= "(" TIdent [Type] ")" ;
 TSimple.   Type2 ::= TIdent ;
 TVariable. Type2 ::= VIdent ;
 TTuple.    Type2 ::= "(" [TypeC] ")" ;
-TList.     Type2 ::= "[" [TypeC] "]" ;
+TList.     Type2 ::= "[" [Type] "]" ;
 TFun.      Type1 ::= Type2 "->" Type1 ;
 internal TUnknown. Type ::= "(Unknown)" ;
 coercions Type 2 ;
