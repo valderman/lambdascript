@@ -21,7 +21,7 @@ import LambdaScript.ErrM
 --   actual structure, so we know what (TIdent "Tree") means in concrete terms.
 data TCState = TCState {
     env   :: [Map String Type],
-    types :: Map String Type
+    types :: Map String ([String], [Constructor])
   } deriving Show
 
 newtype TCM a = TCM {
@@ -105,7 +105,7 @@ declaredInThisScope id = do
 
 -- | Get the concrete representation of the given type. Asking for a
 --   nonexistent type gives an error.
-getType :: String -> TCM Type
+getType :: String -> TCM ([String], [Constructor])
 getType id = do
   st <- get
   case M.lookup id (types st) of
@@ -114,7 +114,7 @@ getType id = do
 
 -- | Declare a new type. Types don't change at all during type checking, so
 --   here trying to redeclare a type produces an error.
-newType :: String -> Type -> TCM ()
+newType :: String -> ([String], [Constructor]) -> TCM ()
 newType id t = do
   st <- get
   case M.lookup id (types st) of
