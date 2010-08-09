@@ -160,7 +160,8 @@ mustBe :: Type -> Type -> TCM (Type, Type)
 mustBe a@(TVariable (VIdent id)) b = do
   at <- typeOfVar id
   case at of
-    Just a' -> a' `mustBe` b
+    Just a' -> do
+      a' `mustBe` b
     _       -> do
       bind id b
       return (b, b)
@@ -170,18 +171,11 @@ mustBe a b@(TVariable _) = do
   (b, a) <- b `mustBe` a
   return (a, b)
 
--- If the types are equal, or if either one is unknown, both types shall be
--- equal.
-mustBe a b
-  | a == b =        return (a, b)
-  | a == TUnknown = return (b, b)
-  | b == TUnknown = return (a, a)
-
 -- For two parametrized types (S a1,a2...) and (T b1,b2...), they are
 -- compatible iff S == T and for each (a, b) a `mustBe` b.  
 mustBe (TParam t1 args1) (TParam t2 args2) | t1 == t2 = do
   args <- mapM (\(a, b) -> a `mustBe` b) (zip args1 args2)
-  let (args1', args2') = unzip args 
+  let (args1', args2') = unzip args
   return (TParam t1 args1', TParam t2 args2')
 
 -- Tuples are really just a special case of parametrized types.
@@ -200,6 +194,13 @@ mustBe a@(TFun arg1 res1) b@(TFun arg2 res2) = do
   (arg1', arg2') <- arg1 `mustBe` arg2
   (res1', res2') <- res1 `mustBe` res2
   return (TFun arg1' res1', TFun arg2' res2')
+
+-- If the types are equal, or if either one is unknown, both types shall be
+-- equal.
+mustBe a b
+  | a == b =        return (a, b)
+  | a == TUnknown = return (b, b)
+  | b == TUnknown = return (a, a)
 
 -- If nothing else matches, the types are not compatible.
 mustBe a b =
