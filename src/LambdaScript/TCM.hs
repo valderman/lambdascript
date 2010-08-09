@@ -156,15 +156,14 @@ newType id t = do
 --   If they are not equal, we fail type checking with an appropriate error
 --   message.
 mustBe :: Type -> Type -> TCM (Type, Type)
--- A variable is always compatible with anything, as we don't have any type
--- classes.
+-- Checking type variables against a concrete type fixes said variable.
 mustBe a@(TVariable (VIdent id)) b = do
   at <- typeOfVar id
   case at of
     Just a' -> a' `mustBe` b
     _       -> do
       bind id b
-      return (a, b)
+      return (b, b)
 
 -- We only want that type var logic in one place.
 mustBe a b@(TVariable _) = do
