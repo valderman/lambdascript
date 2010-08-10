@@ -6,7 +6,7 @@ module LambdaScript.TCM (
     runIn, runIn', run, blankEnv,
     pushScope, popScope,
     typeOf, declare, declaredInThisScope,
-    getType, newType, mustBe,
+    getType, newType, unify,
     bind, typeOfVar
   ) where
 import Prelude as P
@@ -155,53 +155,50 @@ newType id t = do
 --   but still compatible, it is specialized to be equivalent to the other.
 --   If they are not equal, we fail type checking with an appropriate error
 --   message.
-mustBe :: Type -> Type -> TCM (Type, Type)
+unify :: Type -> Type -> TCM Type
 -- Checking type variables against a concrete type fixes said variable.
-mustBe a@(TVariable (VIdent id)) b = do
+unify a@(TVariable (VIdent id)) b = do
   at <- typeOfVar id
   case at of
     Just a' -> do
-      a' `mustBe` b
+      a' `unify` b
     _       -> do
       bind id b
-      return (b, b)
+      return b
 
 -- We only want that type var logic in one place.
-mustBe a b@(TVariable _) = do
-  (b, a) <- b `mustBe` a
-  return (a, b)
+unify a b@(TVariable _) =
+  b `unify` a
 
 -- For two parametrized types (S a1,a2...) and (T b1,b2...), they are
 -- compatible iff S == T and for each (a, b) a `mustBe` b.  
-mustBe (TParam t1 args1) (TParam t2 args2) | t1 == t2 = do
-  args <- mapM (\(a, b) -> a `mustBe` b) (zip args1 args2)
-  let (args1', args2') = unzip args
-  return (TParam t1 args1', TParam t2 args2')
+unify (TParam t1 args1) (TParam t2 args2) | t1 == t2 = do
+  args <- mapM (\(a, b) -> a `unify` b) (zip args1 args2)
+  return (TParam t1 args)
 
 -- Tuples are really just a special case of parametrized types.
-mustBe (TTuple args1) (TTuple args2) | length args1 == length args2 = do
-  args <- mapM (\(TypeC a, TypeC b) -> a `mustBe` b) (zip args1 args2)
-  let (args1', args2') = unzip args
-  return (TTuple $ P.map TypeC args1', TTuple $ P.map TypeC args2')
+unify (TTuple args1) (TTuple args2) | length args1 == length args2 = do
+  args <- mapM (\(TypeC a, TypeC b) -> a `unify` b) (zip args1 args2)
+  return $ TTuple $ P.map TypeC args
 
 -- As are lists.
-mustBe (TList a) (TList b) = do
-  (a', b') <- a `mustBe` b
-  return (TList a', TList b')
+unify (TList a) (TList b) = do
+  t <- a `unify` b
+  return (TList t)
 
 -- And functions.
-mustBe a@(TFun arg1 res1) b@(TFun arg2 res2) = do
-  (arg1', arg2') <- arg1 `mustBe` arg2
-  (res1', res2') <- res1 `mustBe` res2
-  return (TFun arg1' res1', TFun arg2' res2')
+unify a@(TFun arg1 res1) b@(TFun arg2 res2) = do
+  arg <- arg1 `unify` arg2
+  res <- res1 `unify` res2
+  return (TFun arg res)
 
 -- If the types are equal, or if either one is unknown, both types shall be
 -- equal.
-mustBe a b
-  | a == b =        return (a, b)
-  | a == TUnknown = return (b, b)
-  | b == TUnknown = return (a, a)
+unify a b
+  | a == b =        return a
+  | a == TUnknown = return b
+  | b == TUnknown = return a
 
 -- If nothing else matches, the types are not compatible.
-mustBe a b =
+unify a b =
   fail $ "Incompatible types: '" ++ show a ++ "' and '" ++ show b ++ "'"
