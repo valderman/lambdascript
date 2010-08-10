@@ -1,4 +1,4 @@
-HSFILES=
+HSFILES=LambdaScript/TypeChecker.hs LambdaScript/TCM.hs Main.hs
 
 all: .compiler
 
@@ -6,6 +6,7 @@ all: .compiler
 	bnfc -haskell -d LambdaScript LambdaScript.cf
 	make -C LambdaScript .parser
 	make -C LambdaScript .lexer
+	ghc --make $(HSFLAGS) Main.hs
 	touch .compiler
 
 clean:
