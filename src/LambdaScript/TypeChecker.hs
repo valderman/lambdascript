@@ -138,9 +138,34 @@ annotateExpr t ex@(EStr _) =
 annotateExpr t ex@(EChar _) =
   (TSimple $ TIdent $ "Char") `unify` t >>= return . ETyped ex
 
+-- A list of items; check that all items of the list unify with the expected
+-- expression and each other, then check that the aggregate list type unifies
+-- with the expected type. (Just to check that it's indeed a list that's
+-- expected.) 
+annotateExpr t (EList exprs) = do
+  -- Check that a list is OK here
+  (TList t') <- t `unify` (TList TUnknown)
+  -- Check expressions against each other
+  (t'', exprs') <- foldM annotateExprs (t', []) exprs
+  return $ ETyped (EList exprs') (TList t'')
+  where
+    annotateExprs (t, a) ex = do
+      ex' <- annotateExpr t ex
+      let ETyped _ t' = ex'
+      return (t', ex':a)
+
+-- A tuple; check that a tuple is OK, then check the individual elements.
+annotateExpr t (ETuple exprs) = do
+  -- Check that a tuple is OK here
+  (TTuple t') <- t `unify` (TTuple $ replicate (length exprs) $ TypeC TUnknown)
+  -- Check elements of tuple
+  exprs' <- mapM (uncurry annotateExpr) (zip (map (\(TypeC t) -> t) t') exprs)
+  let types = map (\(ETyped _ t) -> t) exprs'
+  return $ ETyped (ETuple $ exprs') (TTuple $ map TypeC types)
+
 -- error trap for debugging
-annotateExpr t ex =
-  error $ "Unhandled expression: " ++ show ex
+annotateExpr t ex = return $ ETyped ex t
+  --error $ "Unhandled expression: " ++ show ex
 
 
 -- | Type check and annotate a pattern.
