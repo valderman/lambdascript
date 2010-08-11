@@ -52,6 +52,25 @@ getResultType t             = t
 annotateDef :: Def -> TCM Def
 annotateDef (FunDef (VIdent id) (TPNoGuards pats expr)) = do
   pushScope
+  pats' <- annotatePatterns id pats
+  popScope
+  return $ FunDef (VIdent id) (TPNoGuards pats' expr)
+annotateDef (FunDef (VIdent id) (TPGuards pats guardeds)) = do
+  pushScope
+  pats' <- annotatePatterns id pats
+  (guards, exprs) <- annotateGuards $ unzip
+                                    $ map (\(GuardedTopExpr g e) -> (g, e))
+                                    $ guardeds
+  popScope
+  return $ FunDef (VIdent id) (TPGuards pats' guardeds)
+annotateDef x =
+  return x
+
+annotateGuards = return . id
+
+-- | Annotate all patterns for the function with the given name.
+annotatePatterns :: String -> [Pattern] -> TCM [Pattern]
+annotatePatterns id pats = do
   fType <- typeOf id
   let argTypes = if fType /= TUnknown
                     then getArgTypes fType
@@ -59,12 +78,7 @@ annotateDef (FunDef (VIdent id) (TPNoGuards pats expr)) = do
   if length pats > length argTypes
      then fail $ "Too many arguments to function '" ++ id ++ "'!"
      else return ()
-  pats' <- mapM (uncurry annotatePattern) (zip argTypes pats)
-  popScope
-  let expr' = expr
-  return $ FunDef (VIdent id) (TPNoGuards pats' expr')
-annotateDef x =
-  return x
+  mapM (uncurry annotatePattern) (zip argTypes pats)
 
 -- | Type check and annotate a pattern.
 annotatePattern :: Type -> Pattern -> TCM Pattern
