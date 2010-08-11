@@ -5,7 +5,7 @@ module LambdaScript.TCM (
     TCM,
     runIn, runIn', run, blankEnv,
     pushScope, popScope,
-    typeOf, declare, declaredInThisScope,
+    typeOf, declare, redeclare, declaredInThisScope,
     getType, newType, unify,
     bind, typeOfVar
   ) where
@@ -102,6 +102,24 @@ declare s t = do
   st <- get
   let (e:envs) = env st
   put $ st {env = (insert s t e) : envs}
+
+-- | Redeclare a symbol with a new type. The symbol is redeclared in its
+--   original scope, as opposed to the current scope that declare works in.
+redeclare :: String -> Type -> TCM ()
+redeclare s t = do
+  st <- get
+  let scopes = env st
+  let scopes' = foldr (update s t) (False, []) scopes
+  case scopes' of
+    (True, scopes') -> put $ st {env = scopes'}
+    _               -> fail $ "Symbol '" ++ s ++ "' was not declared!"
+  where
+    update id t env (False, acc) =
+      case M.lookup id env of
+        Just _ -> (True, insert id t env : acc)
+        _      -> (False, env : acc)
+    update _ _ env (_, acc) =
+      (True, env:acc) 
 
 -- | Bind a type variable to a given concrete type. Has the same semantics as
 --   declare.
