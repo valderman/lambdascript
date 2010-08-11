@@ -94,6 +94,7 @@ EVar.     Expr9 ::= VIdent ;
 EInt.     Expr9 ::= Integer ;
 EDoub.    Expr9 ::= Double ;
 EStr.     Expr9 ::= String ;
+EChar.    Expr9 ::= Char ;
 -- Lv. 8: lists and tuples
 EList.    Expr8 ::= "[" [Expr] "]" ;
 ETuple.   Expr8 ::= "(" [Expr] ")" ;
