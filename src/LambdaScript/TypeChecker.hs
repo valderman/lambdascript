@@ -89,11 +89,13 @@ annotateDef (FunDef (VIdent id) (TPGuards pats guardeds)) = do
 annotateDef x =
   return x
 
+
 -- | Annotate all guards for a given pattern.
 annotateGuards :: [GuardExpr] -> TCM [GuardExpr]
 annotateGuards =
   mapM (\(GuardExpr ex) -> annotateExpr t ex >>= return . GuardExpr)
   where t = TSimple $ TIdent $ "Bool"
+
 
 -- | Annotate all patterns for the given function definition. Note that one
 --   function may have many definitions, as in:
@@ -113,12 +115,33 @@ annotatePatterns id pats = do
      else return ()
   mapM (uncurry annotatePattern) (zip argTypes pats)
 
+
 -- | Type check and annotate an expression.
 annotateExpr :: Type -- ^ Expected type of expression according to type sigs
              -> Expr -- ^ Expression to annotate
              -> TCM Expr
-annotateExpr t ex = do
-  return $ ETyped ex t
+annotateExpr t ex@(EConstr (TIdent id)) =
+  typeOf id >>= unify t >>= return . ETyped ex
+
+annotateExpr t ex@(EVar (VIdent id)) =
+  typeOf id >>= unify t >>= return . ETyped ex
+
+annotateExpr t ex@(EInt _) =
+  (TSimple $ TIdent "Int") `unify` t >>= return . ETyped ex
+
+annotateExpr t ex@(EDoub _) =
+  (TSimple $ TIdent "Double") `unify` t >>= return . ETyped ex
+
+annotateExpr t ex@(EStr _) =
+  (TList $ TSimple $ TIdent $ "Char") `unify` t >>= return . ETyped ex
+
+annotateExpr t ex@(EChar _) =
+  (TSimple $ TIdent $ "Char") `unify` t >>= return . ETyped ex
+
+-- error trap for debugging
+annotateExpr t ex =
+  error $ "Unhandled expression: " ++ show ex
+
 
 -- | Type check and annotate a pattern.
 annotatePattern :: Type -> Pattern -> TCM Pattern
