@@ -164,6 +164,16 @@ annotateExpr t (ETuple exprs) = do
   let types = map (\(ETyped _ t) -> t) exprs'
   return $ ETyped (ETuple $ exprs') (TTuple $ map TypeC types)
 
+-- Function application;
+annotateExpr t (EApp f x) = do
+  -- We know that f must be a function, and that we expect it to return t.
+  -- We don't yet know the type of x, so we don't know what input f should
+  -- have.
+  f'@(ETyped _ (TFun xt rt)) <- annotateExpr (TFun TUnknown t) f
+  -- Now we know what to expect for x
+  x' <- annotateExpr xt x
+  return $ ETyped (EApp f' x') rt
+
 -- error trap for debugging
 annotateExpr t ex = return $ ETyped ex t
   --error $ "Unhandled expression: " ++ show ex
