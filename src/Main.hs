@@ -10,7 +10,9 @@ import LambdaScript.TCM
 
 main :: IO ()
 main = do
-  getArgs >>= parseAndCheck . head
+  (fp:_) <- getArgs
+  putStrLn $ "Checking " ++ fp
+  parseAndCheck fp
 
 -- | Parse and type check a program.
 parseAndCheck :: FilePath -> IO ()

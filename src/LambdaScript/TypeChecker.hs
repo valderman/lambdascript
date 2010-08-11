@@ -50,8 +50,9 @@ getResultType t             = t
 
 -- | Gives the return type of a function if said function is passed n args.
 subtractArgs :: Type -> Int -> Type
-suctractArgs f 0             = f
+subtractArgs f 0             = f
 subtractArgs (TFun _ next) n = subtractArgs next (n-1)
+subtractArgs _ _             = TUnknown
 
 -- | Type check and annotate a function definition
 annotateDef :: Def -> TCM Def
