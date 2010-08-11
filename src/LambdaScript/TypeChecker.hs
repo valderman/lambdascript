@@ -187,9 +187,11 @@ annotatePattern t p@(PString _) =
 annotatePattern t p@(PChar _) =
   t `unify` (TSimple $ TIdent "Char") >>= return . PTyped p
 
--- An identifier; just try to infer its type.
-annotatePattern t p@(PID _) =
-  t `unify` TUnknown >>= return . PTyped p
+-- An identifier; just try to infer its type, then declare it.
+annotatePattern t p@(PID (VIdent id)) = do
+  t' <- t `unify` TUnknown
+  id `declare` t'
+  return $ PTyped p t
 
 -- A list of something; make sure a list is OK here and try to infer the type
 -- of the list as well, then make sure that all inside patterns have the same
