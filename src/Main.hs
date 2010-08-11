@@ -29,7 +29,6 @@ parseAndCheck fp = do
 --  * make sure foo :: a conflicts with more specific foo definition
 --  * unify pattern types with expression types (check expressions first,
 --    obviously, algorithm in TODO2 on erstin)
---  * handle guards (annotateGuardedPattern in annotateDef)
 --  * make sure that function defs have the same # of args!
 --  * perform alpha conversion on parametrized types before running any
 --    checks on them! (addTypes seems like the appropriate place for this)

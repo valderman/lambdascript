@@ -54,17 +54,23 @@ subtractArgs f 0             = f
 subtractArgs (TFun _ next) n = subtractArgs next (n-1)
 subtractArgs _ _             = TUnknown
 
+-- | Builds a function type out of a list of arguments and a return type.
+buildFunType :: [Type] -> Type -> Type
+buildFunType (t:ts) rt = TFun t $ buildFunType ts rt
+buildFunType _ rt      = rt
+
 -- | Type check and annotate a function definition
 annotateDef :: Def -> TCM Def
 annotateDef (FunDef (VIdent id) (TPNoGuards pats expr)) = do
   pushScope
   pats' <- annotatePatterns id pats
   -- find out what type to expect for the expression here, from typesigs and
-  -- the pattern types
+  -- the pattern types then annotate the expression.
   fType <- typeOf id
   let t = subtractArgs fType (length pats)
-  expr' <- annotateExpr t expr
+  expr'@(ETyped _ et) <- annotateExpr t expr
   popScope
+  declare id $ buildFunType (map (\(PTyped _ t) -> t) pats') et
   return $ FunDef (VIdent id) (TPNoGuards pats' expr')
 annotateDef (FunDef (VIdent id) (TPGuards pats guardeds)) = do
   pushScope
@@ -124,8 +130,13 @@ annotateExpr :: Type -- ^ Expected type of expression according to type sigs
 annotateExpr t ex@(EConstr (TIdent id)) =
   typeOf id >>= unify t >>= return . ETyped ex
 
-annotateExpr t ex@(EVar (VIdent id)) =
-  typeOf id >>= unify t >>= return . ETyped ex
+annotateExpr t ex@(EVar (VIdent id)) = do
+  t' <- typeOf id
+  t'' <- t' `unify` t
+  if t' /= t''
+     then redeclare id t''
+     else return () 
+  return $ ETyped ex t''
 
 annotateExpr t ex@(EInt _) =
   (TSimple $ TIdent "Int") `unify` t >>= return . ETyped ex
@@ -169,9 +180,14 @@ annotateExpr t (EApp f x) = do
   -- We know that f must be a function, and that we expect it to return t.
   -- We don't yet know the type of x, so we don't know what input f should
   -- have.
-  f'@(ETyped _ (TFun xt rt)) <- annotateExpr (TFun TUnknown t) f
+  f'@(ETyped fexpr (TFun xt rt)) <- annotateExpr (TFun TUnknown t) f
   -- Now we know what to expect for x
-  x' <- annotateExpr xt x
+  x'@(ETyped _ xt') <- annotateExpr xt x
+  -- Now that we know everything there is to know about the function, we can
+  -- redeclare it.
+  case fexpr of
+    EVar (VIdent id) -> redeclare id (TFun xt' rt)
+    _                -> return ()
   return $ ETyped (EApp f' x') rt
 
 -- error trap for debugging
@@ -200,7 +216,7 @@ annotatePattern t p@(PChar _) =
 -- An identifier; just try to infer its type, then declare it.
 annotatePattern t p@(PID (VIdent id)) = do
   t' <- t `unify` TUnknown
-  id `declare` t'
+  declare id t'
   return $ PTyped p t
 
 -- A list of something; make sure a list is OK here and try to infer the type
