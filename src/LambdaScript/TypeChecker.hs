@@ -48,27 +48,60 @@ getResultType :: Type -> Type
 getResultType (TFun _ next) = getResultType next
 getResultType t             = t
 
+-- | Gives the return type of a function if said function is passed n args.
+subtractArgs :: Type -> Int -> Type
+suctractArgs f 0             = f
+subtractArgs (TFun _ next) n = subtractArgs next (n-1)
+
 -- | Type check and annotate a function definition
 annotateDef :: Def -> TCM Def
 annotateDef (FunDef (VIdent id) (TPNoGuards pats expr)) = do
   pushScope
   pats' <- annotatePatterns id pats
+  -- find out what type to expect for the expression here, from typesigs and
+  -- the pattern types
+  fType <- typeOf id
+  let t = subtractArgs fType (length pats)
+  expr' <- annotateExpr t expr
   popScope
-  return $ FunDef (VIdent id) (TPNoGuards pats' expr)
+  return $ FunDef (VIdent id) (TPNoGuards pats' expr')
 annotateDef (FunDef (VIdent id) (TPGuards pats guardeds)) = do
   pushScope
+  -- check patterns
   pats' <- annotatePatterns id pats
-  (guards, exprs) <- annotateGuards $ unzip
-                                    $ map (\(GuardedTopExpr g e) -> (g, e))
-                                    $ guardeds
+
+  -- unpack expressions and guards into something we can work with
+  let (guards, exprs) = unzip $ map (\(GuardedTopExpr g e) -> (g, e))
+                              $ guardeds
+
+  -- check the guards
+  guards' <- annotateGuards guards
+
+  -- figure out what to expect from the expressions, then check them
+  fType <- typeOf id
+  let t = subtractArgs fType (length pats)
+  exprs' <- mapM (annotateExpr t) exprs
+
+  -- pack up everything again
+  let guardeds' = map (uncurry GuardedTopExpr) (zip guards' exprs')
   popScope
-  return $ FunDef (VIdent id) (TPGuards pats' guardeds)
+  return $ FunDef (VIdent id) (TPGuards pats' guardeds')
 annotateDef x =
   return x
 
-annotateGuards = return . id
+-- | Annotate all guards for a given pattern.
+annotateGuards :: [GuardExpr] -> TCM [GuardExpr]
+annotateGuards =
+  mapM (\(GuardExpr ex) -> annotateExpr t ex >>= return . GuardExpr)
+  where t = TSimple $ TIdent $ "Bool"
 
--- | Annotate all patterns for the function with the given name.
+-- | Annotate all patterns for the given function definition. Note that one
+--   function may have many definitions, as in:
+--   f _ 0 = Nothing
+--   f x y = Just (x/y)
+--   This function only deals with one of said definitions at a time.
+--   In the above examples, the patterns are [wildcard, 0] and [x, y]
+--   respectively.
 annotatePatterns :: String -> [Pattern] -> TCM [Pattern]
 annotatePatterns id pats = do
   fType <- typeOf id
@@ -79,6 +112,13 @@ annotatePatterns id pats = do
      then fail $ "Too many arguments to function '" ++ id ++ "'!"
      else return ()
   mapM (uncurry annotatePattern) (zip argTypes pats)
+
+-- | Type check and annotate an expression.
+annotateExpr :: Type -- ^ Expected type of expression according to type sigs
+             -> Expr -- ^ Expression to annotate
+             -> TCM Expr
+annotateExpr t ex = do
+  return $ ETyped ex t
 
 -- | Type check and annotate a pattern.
 annotatePattern :: Type -> Pattern -> TCM Pattern
