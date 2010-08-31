@@ -26,7 +26,7 @@ internal Const. Def ::= ConstDef ;
 separator Def "" ;
 
 -- Happy doesn't allow this to be declared internal.
-ConstDef. ConstDef ::= String " = " Expr ;
+ConstDef. ConstDef ::= Ident " = " Expr ;
 
 -- a top pattern can be either a list of patterns followed by "->" and an
 -- expression, or a list of patterns followed by a list of guarded top

@@ -28,9 +28,9 @@ groupDefs =
 -- | Desugar all definitions for a given symbol.
 deFunDefs :: [Def] -> Def
 deFunDefs defs =
-  Const $ ConstDef id (lambdafy patsInFirst
-                        $ mergeCases
-                        $ map casefy thePatExprs)
+  Const $ ConstDef (Ident id) (lambdafy patsInFirst
+                              $ mergeCases
+                              $ map casefy thePatExprs)
   where
     (id, patsInFirst) =
       case head defs of
