@@ -28,15 +28,15 @@ groupDefs =
 -- | Desugar all definitions for a given symbol.
 deFunDefs :: [Def] -> Def
 deFunDefs defs =
-  FunDef id (TPNoGuards [] (lambdafy patsInFirst
-                            $ mergeCases
-                            $ map casefy thePatExprs))
+  Const $ ConstDef id (lambdafy patsInFirst
+                        $ mergeCases
+                        $ map casefy thePatExprs)
   where
     (id, patsInFirst) =
       case head defs of
-        (FunDef id (TPNoGuards pats _)) ->
+        (FunDef (VIdent id) (TPNoGuards pats _)) ->
           (id, pats)
-        (FunDef id (TPGuards pats _)) ->
+        (FunDef (VIdent id) (TPGuards pats _)) ->
           (id, pats)
     thePatExprs =
       map getPatExprs defs
