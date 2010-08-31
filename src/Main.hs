@@ -1,13 +1,11 @@
 module Main where
 import System.Environment (getArgs)
 import LambdaScript.Desugar
-import LambdaScript.TypeChecker
+import LambdaScript.Depends
 import LambdaScript.Par
 import LambdaScript.Lex
 import LambdaScript.Print
 import LambdaScript.ErrM
-import LambdaScript.Abs
-import LambdaScript.TCM
 
 main :: IO ()
 main = do
@@ -20,6 +18,6 @@ parseAndCheck :: FilePath -> IO ()
 parseAndCheck fp = do
   str <- readFile fp
   let prog = case pProgram $ tokens str of
-               Ok p   -> desugar p
+               Ok p   -> bindGroups $ desugar p
                Bad s  -> error $ "Err: " ++ s
   putStrLn $ printTree prog
