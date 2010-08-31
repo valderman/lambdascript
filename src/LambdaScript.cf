@@ -50,8 +50,10 @@ separator Def "" ;
 
 -- Happy doesn't allow this to be declared internal.
 ConstDef. ConstDef ::= Ident " = " Expr ;
-separator ConstDef ",";
-BindGroup. BindGroup ::= [ConstDef] ;
+separator ConstDef "";
+BindGroup. BindGroup ::= "\n-- Begin bind group\n"
+                         [ConstDef]
+                         "\n-- End bind group\n\n" ;
 
 -- a top pattern can be either a list of patterns followed by "->" and an
 -- expression, or a list of patterns followed by a list of guarded top
