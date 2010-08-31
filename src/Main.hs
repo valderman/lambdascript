@@ -1,5 +1,6 @@
 module Main where
 import System.Environment (getArgs)
+import LambdaScript.Desugar
 import LambdaScript.TypeChecker
 import LambdaScript.Par
 import LambdaScript.Lex
@@ -19,18 +20,6 @@ parseAndCheck :: FilePath -> IO ()
 parseAndCheck fp = do
   str <- readFile fp
   let prog = case pProgram $ tokens str of
-               Ok p   -> annotate p `runIn'` blankEnv
+               Ok p   -> desugar p
                Bad s  -> error $ "Err: " ++ s
-  case prog of
-    Ok (Program p, st) -> putStrLn $ printTree p
-    Bad x      -> error $ "Err: " ++ x
-
--- TODO:
---  * make sure foo :: a conflicts with more specific foo definition
---  * unify pattern types with expression types (check expressions first,
---    obviously, algorithm in TODO2 on erstin)
---  * make sure that function defs have the same # of args!
---  * perform alpha conversion on parametrized types before running any
---    checks on them! (addTypes seems like the appropriate place for this)
---  * check that all used type vars are actually declared! (also addTypes?)
---  * after everything else, turn all TUnknown into unbound type vars.
+  putStrLn $ printTree prog
