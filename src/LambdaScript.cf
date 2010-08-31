@@ -50,6 +50,7 @@ separator Def "" ;
 
 -- Happy doesn't allow this to be declared internal.
 ConstDef. ConstDef ::= Ident " = " Expr ;
+separator ConstDef ",";
 BindGroup. BindGroup ::= [ConstDef] ;
 
 -- a top pattern can be either a list of patterns followed by "->" and an
