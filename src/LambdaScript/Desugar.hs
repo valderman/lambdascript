@@ -1,3 +1,5 @@
+-- | Module responsible for desugaring certain language constructs into
+--   other, simpler, constructs.
 module LambdaScript.Desugar (desugar) where
 import Data.List
 import LambdaScript.Abs
