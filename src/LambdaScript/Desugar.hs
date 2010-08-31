@@ -3,6 +3,10 @@ import Data.List
 import LambdaScript.Abs
 import LambdaScript.Print
 
+-- | Prefix all freshly generated variables with this, to avoid name clashes.
+generatedVarPrefix :: Char
+generatedVarPrefix = '*'
+
 -- | Perform desugaring on the given program.
 desugar :: Program -> Program
 desugar (Program defs) =
@@ -26,23 +30,25 @@ deFunDefs :: [Def] -> Def
 deFunDefs defs =
   FunDef id (TPNoGuards [] (lambdafy patsInFirst
                             $ mergeCases
-                            $ map (uncurry casefy) thePatExprs))
+                            $ map casefy thePatExprs))
   where
     (id, patsInFirst) =
       case head defs of
         (FunDef id (TPNoGuards pats _)) ->
           (id, pats)
+        (FunDef id (TPGuards pats _)) ->
+          (id, pats)
     thePatExprs =
       map getPatExprs defs
-    getPatExprs (FunDef _ (TPNoGuards pats expr)) =
-      (pats, expr)
+    getPatExprs (FunDef _ tp) =
+      tp
 
 -- | Desugar a lone function definition.
 deFun :: Def -> Def
-deFun (FunDef id (TPGuards pats guards)) =
-  undefined
-deFun (FunDef id (TPNoGuards pats ex)) =
-  FunDef id (TPNoGuards [] (lambdafy pats $ casefy pats ex))
+deFun (FunDef id tp@(TPGuards pats guards)) =
+  FunDef id (TPNoGuards [] (lambdafy pats $ casefy tp))
+deFun (FunDef id tp@(TPNoGuards pats ex)) =
+  FunDef id (TPNoGuards [] (lambdafy pats $ casefy tp))
 
 -- | Merge a list of case expressions into one case expression.
 --   For example:
@@ -66,12 +72,19 @@ mergeCases cases =
 --     fun a b c = expr
 --   ...turns into:
 --     case (v0, v1, v2) of (a, b, c) -> expr
-casefy :: [Pattern] -> Expr -> Expr
-casefy pats ex =
-  ECase tupleEx [CPNoGuards (PTuple $ map PatC pats) ex]  
+casefy :: TopPattern -> Expr
+casefy (TPGuards pats guards) =
+  ECase (pats2Tuple pats) [CPGuards (PTuple $ map PatC pats) (top2case guards)]
   where
-    tupleEx =
-      ETuple [EVar $ VIdent $ '*':show n | (_, n) <- zip pats [0..]]
+    top2case = map (\(GuardedTopExpr guard ex) -> GuardedCaseExpr guard ex)
+casefy (TPNoGuards pats ex) =
+  ECase (pats2Tuple pats) [CPNoGuards (PTuple $ map PatC pats) ex]  
+
+-- | Creates a tuple expression for pattern matching on function arguments in
+--   the function body redurned by lambdafy.
+pats2Tuple :: [Pattern] -> Expr
+pats2Tuple pats =
+  ETuple [EVar $ VIdent $ generatedVarPrefix:show n | (_, n) <- zip pats [0..]]
 
 -- | Turn a list function definition split into patterns and expression into
 --   an equivalent set of nested lambdas.
@@ -87,4 +100,4 @@ lambdafy pats ex =
   foldr mkLambda ex (zip pats [0..])
   where
     mkLambda (_, n) a =
-      ELambda [PID $ VIdent $ '*':show n] a
+      ELambda [PID $ VIdent $ generatedVarPrefix:show n] a
