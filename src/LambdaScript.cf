@@ -18,15 +18,39 @@ Program. Program ::= [Def] ;
 -- enough semicolons to keep consistency and not confuse Happy while still
 -- keeping their use to a minimum.
 -- We also have an internal Const case, which is used during desugaring to turn
--- function definitions into simple (String, Expr) pairs in a type safe manner.
+-- function definitions into simple (String, Expr) pairs in a type safe manner,
+-- and an internal BindGroup, which is used to group functions together for
+-- type checking.
+-- We could have done that by simply turning this:
+--   f x = g x;
+--   g x = h x;
+--   h x = g (i x);
+--   i x = x + 1;
+-- ...into this:
+--   f x = g x {
+--       g x = h x;
+--       h x = g x {
+--         i x = x + 1;
+--       };
+--     };
+-- ...but then we wouldn't have a handy list of top-level functions to export
+-- so we instead turn it into this:
+--   [[(i, \x -> x+1)],
+--    [(h, \x -> g x), (g, \x -> h x)],
+--    [(f, \x -> x+1)]]
+-- Then we treat every inner list as a single atomic entity for type
+-- checking and then just type check those entities in order from first to
+-- last. The list is a list of mutual recursion groups ordered by dependency.
 TypeDef.  Def ::= NewType ";" ;
 TypeDecl. Def ::= VIdent "::" Type ;
 FunDef.   Def ::= VIdent TopPattern ;
 internal Const. Def ::= ConstDef ;
+internal BGroup. Def ::= BindGroup ;
 separator Def "" ;
 
 -- Happy doesn't allow this to be declared internal.
 ConstDef. ConstDef ::= Ident " = " Expr ;
+BindGroup. BindGroup ::= [ConstDef] ;
 
 -- a top pattern can be either a list of patterns followed by "->" and an
 -- expression, or a list of patterns followed by a list of guarded top
