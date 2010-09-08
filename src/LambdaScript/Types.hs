@@ -199,6 +199,9 @@ instance Types Scheme where
   apply s (Forall ks t) = Forall ks (apply s t)
   freeVars (Forall _ t) = freeVars t
 
+toScheme :: AbsType -> Scheme
+toScheme t = Forall [] t
+
 -- | Quantify the given type over the specified type variables.
 --   This means that the intersection of the given vars and the free type vars
 --   of the given type is "put to rest," so to speak. It's determined once and
