@@ -28,6 +28,13 @@ instantiate :: Scheme -> TCM AbsType
 instantiate (Forall ks t) =
   mapM newTVar ks >>= \ts -> return $ inst ts t
 
+-- | Unify two types, extending the global substitution with the resulting
+--   substitution.
+unify :: AbsType -> AbsType -> TCM ()
+unify a b = do
+  s <- getSubst
+  extSubst =<< mgu (apply s a) (apply s b)
+
 -- | Run a type checking computation.
 runTCM :: TCM a -> a
 runTCM (TCM f) =
