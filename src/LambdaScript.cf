@@ -13,8 +13,7 @@ Program. Program ::= [Def] ;
 
 -- a definition is either a type definition, a type declaration or a function
 -- definition; type defs end with a semicolon. a function does not, since
--- every top level expression ends with a semicolon. neither does type
--- declarations, since that would be just plain ugly; the idea is to insert
+-- every top level expression ends with a semicolon. the idea is to insert
 -- enough semicolons to keep consistency and not confuse Happy while still
 -- keeping their use to a minimum.
 -- We also have an internal Const case, which is used during desugaring to turn
@@ -42,7 +41,7 @@ Program. Program ::= [Def] ;
 -- checking and then just type check those entities in order from first to
 -- last. The list is a list of mutual recursion groups ordered by dependency.
 TypeDef.  Def ::= NewType ";" ;
-TypeDecl. Def ::= VIdent "::" Type ;
+TypeDecl. Def ::= VIdent "::" Type ";" ;
 FunDef.   Def ::= VIdent TopPattern ;
 internal Const. Def ::= ConstDef ;
 internal BGroup. Def ::= BindGroup ;
@@ -66,25 +65,20 @@ TPNoGuards. TopPattern ::= [Pattern] "=" Expr ";" ;
 GuardedTopExpr. GuardedTopExpr ::= GuardExpr "=" Expr ;
 terminator nonempty GuardedTopExpr ";" ;
 
--- a type can be one of:
---  simple type:       Type
---  type variable:     t
---  parametrized type: (Type t) (must be parenthesized, for now)
---  list type:         [t]
---  tuple type:        (t1, t2, ...)
---  function type:     t1 -> t2
-TParam.    Type2 ::= "(" TIdent [Type] ")" ;
-TSimple.   Type2 ::= TIdent ;
-TVariable. Type2 ::= VIdent ;
-TTuple.    Type2 ::= "(" [TypeC] ")" ;
-TList.     Type2 ::= "[" Type "]" ;
-TFun.      Type1 ::= Type2 "->" Type1 ;
-coercions Type 2 ;
-separator nonempty Type "" ;
-
--- comma separated list of types
-TypeC. TypeC ::= Type ;
-separator TypeC "," ;
+-- A type can be one of:
+--   A type constructor
+--   A type variable
+--   A list type
+--   A tuple type
+--   
+TVar. Type4 ::= VIdent ;
+TCon. Type4 ::= TIdent ;
+TLst. Type3 ::= "[" Type "]" ;
+TTup. Type3 ::= "(" [Type] ")" ;
+TApp. Type2 ::= Type2 Type3 ;
+TOp.  Type1 ::= Type2 "->" Type1 ;
+coercions Type 4 ;
+separator nonempty Type "," ;
 
 -- we have to make a production of VIdents, so we can make a list out of them
 AnyVar. AnyVar ::= VIdent ;
