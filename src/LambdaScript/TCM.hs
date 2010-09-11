@@ -3,7 +3,7 @@ import LambdaScript.Types
 
 newtype TCM a = TCM {runT :: Int -> Subst -> (a, Int, Subst)}
 
-type Infer e t = [Assump] -> e -> TCM t
+type Infer e t = [Assump] -> e -> TCM (t, e)
 
 instance Monad TCM where
   return x = TCM $ \n s -> (x, n, s)
