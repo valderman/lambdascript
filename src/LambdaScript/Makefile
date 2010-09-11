@@ -1,5 +1,5 @@
 .parser: Par.y
-	happy -gca Par.y
+	happy --info=happy.info -gca Par.y
 	touch .parser
 
 .lexer: Lex.x
@@ -7,5 +7,5 @@
 	touch .lexer
 
 clean:
-	rm Abs.* Doc.* ErrM.* Lex.* Par.* Print.* Skel.* Test.*
+	rm Abs.* Doc.* ErrM.* Lex.* Par.* Print.* Skel.* Test.* happy.info
 	rm .lexer .parser
