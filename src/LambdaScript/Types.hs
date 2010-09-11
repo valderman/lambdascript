@@ -5,6 +5,33 @@ import LambdaScript.Abs
 
 type ID = String
 
+t2a :: Type -> AbsType
+t2a (TVar (VIdent id)) = ATVar $ ATyvar id Star
+t2a (TCon (TIdent id)) = ATCon $ ATycon id Star
+t2a (TLst t)           = list $ t2a t
+t2a (TTup ts)          = tuple $ map t2a ts
+t2a (TApp a b)         = ATApp (t2a a) (t2a b)
+t2a (TOp a b)          = t2a a ~> t2a b
+
+a2t :: AbsType -> Type
+a2t (ATVar (ATyvar id _)) = TVar $ VIdent id
+a2t (ATCon (ATycon id _)) = TCon $ TIdent id
+a2t (ATApp (ATApp a l) r)
+  | a == tArrow           = TOp (a2t l) (a2t r)
+a2t (ATApp l r)           = TApp (a2t l) (a2t r)
+
+-- | Kinds may be either * or Kind -> Kind
+data Kind
+  = Star
+  | KFun Kind Kind
+    deriving Eq
+
+-- | Type variable; an identifier and a kind
+data ATyvar = ATyvar ID Kind deriving Eq
+
+-- | Type constructor; once again identifier + kind
+data ATycon = ATycon ID Kind deriving Eq
+
 -- | Abstract types; type var, aggregate type, type constructor and quantified
 --   type var.
 data AbsType
@@ -33,26 +60,14 @@ instance Show AbsType where
   show (ATGen n) =
     enumId n
 
--- | Kinds may be either * or Kind -> Kind
-data Kind
-  = Star
-  | KFun Kind Kind
-    deriving Eq
-
 -- | Pretty print kinds
 instance Show Kind where
   show Star           = "*"
   show (KFun Star k2) = "* -> " ++ show k2
   show (KFun k1 k2)   = "(" ++ show k1 ++ ") -> " ++ show k2
 
--- | Type variable; an identifier and a kind
-data ATyvar = ATyvar ID Kind deriving Eq
-
 instance Show ATyvar where
   show (ATyvar id _) = id
-
--- | Type constructor; once again identifier + kind
-data ATycon = ATycon ID Kind deriving Eq
 
 instance Show ATycon where
   show (ATycon id _) = id
