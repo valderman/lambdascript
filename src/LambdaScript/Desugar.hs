@@ -51,13 +51,6 @@ deFunDefs defs =
     getPatExprs (FunDef _ tp) =
       tp
 
--- | Desugar a lone function definition.
-deFun :: Def -> Def
-deFun (FunDef id tp@(TPGuards pats guards)) =
-  FunDef id (TPNoGuards [] (lambdafy pats $ casefy tp))
-deFun (FunDef id tp@(TPNoGuards pats ex)) =
-  FunDef id (TPNoGuards [] (lambdafy pats $ casefy tp))
-
 -- | Merge a list of case expressions into one case expression.
 --   For example:
 --    case a of 1 -> 1
@@ -67,6 +60,8 @@ deFun (FunDef id tp@(TPNoGuards pats ex)) =
 --      1 -> 1
 --      2 -> 2
 mergeCases :: [Expr] -> Expr
+mergeCases [soleCase] =
+  soleCase
 mergeCases cases =
   ECase expr (foldr addCase [] cases)
   where
@@ -81,6 +76,7 @@ mergeCases cases =
 --   ...turns into:
 --     case (v0, v1, v2) of (a, b, c) -> expr
 casefy :: TopPattern -> Expr
+casefy (TPNoGuards [] ex) = ex
 casefy (TPGuards pats guards) =
   ECase (pats2Tuple pats) [CPGuards (PTuple $ map PatC pats) (top2case guards)]
   where
