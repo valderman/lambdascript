@@ -4,15 +4,14 @@ import Data.List hiding (find)
 import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
-import System.IO.Unsafe
 
-debug s x = let io = unsafePerformIO (putStrLn s) in io `seq` x
-
+-- | Infer types for the whole progran.
 infer :: Program -> (Program, Subst)
 infer (Program defs) =
   case runTCM $ tiDefs [] $ defs of
     ((_, defs'), subst) -> (Program defs', subst)
 
+-- | Infer the type of a list of definitions.
 tiDefs :: Infer [Def] [Assump]
 tiDefs as defs =
   foldM (\(a, ds) d -> do
@@ -21,6 +20,8 @@ tiDefs as defs =
         (as, [])
         defs
 
+-- | Infer the types of a definition, which at this point should be either a
+--   bind group, a type declaration or a type definition.
 tiDef :: Infer Def [Assump]
 tiDef as (BGroup g) = do
   (as', bg) <- tiBindGroup as g
@@ -38,7 +39,7 @@ tiBindGroup as (BindGroup defs) = do
       scs       = map toScheme ts
       as'       = zipWith (:>:) is scs ++ as
   exs' <- sequence $ zipWith (\ex t -> do
-                                 (_, ex') <- ("checking " ++ show ex) `debug` tiExpr as' ex
+                                 (_, ex') <- tiExpr as' ex
                                  unify (eUntyped ex') t
                                  return ex') exs ts
   s <- getSubst
@@ -47,11 +48,11 @@ tiBindGroup as (BindGroup defs) = do
   -- all expressions in bind group.
   let ts'  = apply s ts
       vs   = foldr1 union (map freeVars ts') \\ freeVars (apply s as)
-      as'    = show as'' `debug` as''
       scs' = map (quantify vs) ts'
-      as''  = zipWith (:>:) is scs' ++ as
-  return (as', BindGroup $ zipWith ConstDef (map Ident is) exs')
+      as'' = zipWith (:>:) is scs' ++ as
+  return (as'', BindGroup $ zipWith ConstDef (map Ident is) exs')
 
+-- | Infer the type of an expression.
 tiExpr :: Infer Expr [Assump]
 tiExpr as e@(EConstr (TIdent id)) = do
   t <- find id as >>= instantiate
@@ -104,7 +105,7 @@ tiExpr as (EGT x y)   = tiComparison as EGT x y
 tiExpr as (ELE x y)   = tiComparison as ELE x y
 tiExpr as (ENE x y)   = tiComparison as ENE x y
 tiExpr as (EGE x y)   = tiComparison as EGE x y
-tiExpr as (ECase e c) = tiCase as e c
+tiExpr as (ECase e c) = tiCase as (ECase e c)
 tiExpr as (ELambda pats ex) = do
   (as', pats') <- tiPats as pats
   (_, ex') <- tiExpr as' ex
@@ -124,7 +125,10 @@ tiExpr as (EBinds ex defs) = do
 tiExpr _ ex =
   error $ "Not implemented - inferring expression: " ++ show ex
 
-tiCase as ex cps = do
+-- | Infer the type of a case expression.
+tiCase :: Infer Expr [Assump]
+tiCase as e = do
+  let (ECase ex cps) = e
   (_, ex') <- tiExpr as ex
   cps' <- mapM (tiCasePat (eUntyped ex') as) cps
   v <- newTVar Star
@@ -132,6 +136,8 @@ tiCase as ex cps = do
   mapM_ (unify v) ts
   return (as, eTyped (ECase ex' cps'') v)
 
+-- | Infer the type of a case battern.
+tiCasePat :: AbsType -> Infer CasePattern AbsType
 tiCasePat exType as (CPNoGuards p ex) = do
   -- make sure the type of the pattern and the expression matched against
   -- are the same.
@@ -149,12 +155,16 @@ tiCasePat exType as (CPGuards p guardeds) = do
   mapM_ (unify v) ts
   return (v, CPGuards p' gs)
 
+-- | Infer the type of a guarded case expression.
+tiGCE :: Infer GuardedCaseExpr AbsType
 tiGCE as (GuardedCaseExpr (GuardExpr gex) ex) = do
   (_, gex') <- tiExpr as gex
   unify tBool (eUntyped gex')
   (_, ex') <- tiExpr as ex
   return (eUntyped ex', GuardedCaseExpr (GuardExpr gex') ex')
 
+-- | Infer types for an overloaded arithmetic operation.
+tiNumOp :: [Assump] -> (Expr->Expr->Expr) -> Expr -> Expr -> TCM([Assump],Expr)
 tiNumOp as cons x y = do
   (_, x') <- tiExpr as x
   (_, y') <- tiExpr as y
@@ -163,6 +173,12 @@ tiNumOp as cons x y = do
   unify t (eUntyped y')
   return (as, eTyped (cons x' y') t)
 
+-- | Infer types for a comparison (EQ, LT, etc.) operator.
+tiComparison :: [Assump]
+             -> (Expr -> Expr -> Expr)
+             -> Expr
+             -> Expr
+             -> TCM([Assump],Expr)
 tiComparison as cons x y = do
   (_, x') <- tiExpr as x
   (_, y') <- tiExpr as y
@@ -187,6 +203,7 @@ eUntyped :: Expr -> AbsType
 eUntyped (ETyped _ t) = t2a t
 eUntyped p            = error $ "Can't untype: " ++ show p
 
+-- | Infer the type of a pattern.
 tiPat :: Infer Pattern [Assump]
 tiPat as p@(PID (VIdent id)) = do
   v <- newTVar Star
@@ -238,6 +255,7 @@ tiPat as (PCons p ps) = do
   -- return a list of the type of x as the representative type for this pat.
   return (as'', pTyped (PCons p' ps') tlist)
 
+-- | Infer types for a list of patterns.
 tiPats :: Infer [Pattern] [Assump]
 tiPats as ps = do
   (as', ps') <- foldM pat (as, []) ps
