@@ -36,7 +36,7 @@ unify a b = do
   extSubst =<< mgu (apply s a) (apply s b)
 
 -- | Run a type checking computation.
-runTCM :: TCM a -> a
+runTCM :: TCM a -> (a, Subst)
 runTCM (TCM f) =
   case f 0 nullSubst of
-    (x, n, s) -> x
+    (x, n, s) -> (x, s)
