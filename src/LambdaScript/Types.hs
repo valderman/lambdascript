@@ -12,6 +12,7 @@ t2a (TLst t)           = list $ t2a t
 t2a (TTup ts)          = tuple $ map t2a ts
 t2a (TApp a b)         = ATApp (t2a a) (t2a b)
 t2a (TOp a b)          = t2a a ~> t2a b
+t2a (TGen n)           = ATGen $ fromIntegral n
 
 a2t :: AbsType -> Type
 a2t (ATVar (ATyvar id _)) = TVar $ VIdent id
@@ -19,12 +20,12 @@ a2t (ATCon (ATycon id _)) = TCon $ TIdent id
 a2t (ATApp (ATApp a l) r)
   | a == tArrow           = TOp (a2t l) (a2t r)
 a2t (ATApp l r)           = TApp (a2t l) (a2t r)
+a2t (ATGen n)             = TGen $ fromIntegral n
 
--- | Kinds may be either * or Kind -> Kind
 data Kind
   = Star
   | KFun Kind Kind
-    deriving Eq
+    deriving (Eq, Show)
 
 -- | Type variable; an identifier and a kind
 data ATyvar = ATyvar ID Kind deriving Eq
@@ -58,13 +59,7 @@ instance Show AbsType where
   show (ATCon c) =
     show c
   show (ATGen n) =
-    enumId n
-
--- | Pretty print kinds
-instance Show Kind where
-  show Star           = "*"
-  show (KFun Star k2) = "* -> " ++ show k2
-  show (KFun k1 k2)   = "(" ++ show k1 ++ ") -> " ++ show k2
+    enumId n ++ "g"
 
 instance Show ATyvar where
   show (ATyvar id _) = id
@@ -86,9 +81,11 @@ tUnit, tChar, tInt, tDouble, tList, tArrow, tString :: AbsType
 tTuple :: Int -> AbsType
 tUnit    = ATCon $ ATycon "()" Star
 tChar    = ATCon $ ATycon "Char" Star
-tInt     = ATCon $ ATycon "Int" Star
-tDouble  = ATCon $ ATycon "Double" Star
+tBool    = ATCon $ ATycon "Bool" Star
+tInt     = num $ ATCon $ ATycon "Int" Star
+tDouble  = num $ ATCon $ ATycon "Double" Star
 tList    = ATCon $ ATycon "[]" (KFun Star Star)
+tNum     = ATCon $ ATycon "*Num" Star
 tArrow   = ATCon $ ATycon "->" (KFun Star (KFun Star Star))
 tTuple n = ATCon $ ATycon ("(" ++ replicate n ',' ++ ")") (funKind n)
 tString  = list tChar
@@ -106,6 +103,10 @@ list t   = ATApp tList t
 tuple :: [AbsType] -> AbsType
 tuple ts = foldl' (\x a -> ATApp x a) (tTuple (length ts)) ts
 
+-- | Create a numeric type.
+num :: AbsType -> AbsType
+num t = ATApp tNum t
+
 -- | Everything that has a kind; types, for example.
 class HasKind t where
   -- | Returns the kind of the given kind-having thing.
@@ -120,7 +121,10 @@ instance HasKind ATycon where
 instance HasKind AbsType where
   kind (ATVar v)   = kind v
   kind (ATCon c)   = kind c
-  kind (ATApp a _) = case kind a of (KFun _ k) -> k
+  kind (ATApp a _) = case kind a of
+                       (KFun _ k) -> k
+                       _          -> Star
+  kind (ATGen _)   = Star
 
 -- | Type of substitution.
 type Subst = [(ATyvar, AbsType)]
@@ -208,7 +212,7 @@ mgu (ATCon c1) (ATCon c2) | c1 == c2 =
 mgu t1 t2 =
   fail $ "Types don't unify: " ++ show t1 ++ " and " ++ show t2
 
-data Scheme = Forall [Kind] AbsType deriving Eq
+data Scheme = Forall [Kind] AbsType deriving (Show, Eq)
 
 instance Types Scheme where
   apply s (Forall ks t) = Forall ks (apply s t)
@@ -228,7 +232,7 @@ quantify vs t = Forall (map kind vs) (apply s t)
     vs' = filter (`elem` vs) (freeVars t)
     s   = zip vs' (map ATGen [0..])
 
-data Assump = ID :>: Scheme
+data Assump = ID :>: Scheme deriving Show
 
 instance Types Assump where
   apply s (id :>: t) = id :>: apply s t
