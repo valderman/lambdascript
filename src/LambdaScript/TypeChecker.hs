@@ -148,7 +148,7 @@ tiCasePat exType as (CPNoGuards p ex) = do
   return (eUntyped ex', CPNoGuards p' ex')
 tiCasePat exType as (CPGuards p guardeds) = do
   (as', p') <- tiPat as p
-  unify exType (pUntyped p)  
+  unify exType (pUntyped p')
   tsgs <- mapM (tiGCE as') guardeds
   let (ts, gs) = unzip tsgs
   v <- newTVar Star
