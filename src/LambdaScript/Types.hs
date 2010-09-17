@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
+-- | Operations on types, and functions to create representations of the basic
+--   types in lambdascript.
 module LambdaScript.Types where
 import Data.List (foldl', union, intersect)
 import LambdaScript.Abs
@@ -22,6 +24,10 @@ tNum     = TCon $ TIdent "*Num"
 tArrow   = TCon $ TIdent "->"
 tTuple n = TCon $ TIdent ("(" ++ replicate n ',' ++ ")")
 tString  = list tChar
+
+-- | Create a type from a type constructor and a list of type vars.
+mkADT :: TIdent -> [VIdent] -> Type
+mkADT id vs = foldl' TApp (TCon id) (map TVar vs)
 
 -- | Create an aggregate type.
 (~>) :: Type -> Type -> Type

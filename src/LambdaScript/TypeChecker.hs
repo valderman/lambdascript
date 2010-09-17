@@ -4,6 +4,7 @@ import Data.List hiding (find)
 import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
+import LambdaScript.Print
 
 -- | Infer types for the whole progran.
 infer :: Program -> (Program, Subst)
@@ -27,7 +28,7 @@ tiDef as (BGroup g) = do
   (as', bg) <- tiBindGroup as g
   return (as', BGroup bg)
 tiDef as d@(TypeDef nt) =
-  error "TODO: Add type definitions" -- addConstructors as nt
+  addConstructors as d
 tiDef as d@(TypeDecl (VIdent id) t) =
   -- Quantify over all free vars, as no identifier in a type declaration can
   -- be previously bound.
@@ -47,6 +48,20 @@ tiDef as d@(TypeDecl (VIdent id) t) =
     mangle t                        = t
 tiDef _ d =
   fail $ "No implementation for inferring: " ++ show d
+
+-- | Adds type information for all constructors of the given type.
+addConstructors :: Infer Def [Assump]
+addConstructors as td@(TypeDef (NewType id vars cons)) = do
+  let vars' = map (\(AnyVar v) -> v) vars
+  as' <- foldM (addCon $ mkADT id vars') as cons
+  return (as', td)
+  where
+    addCon t as (Constructor (TIdent c) args) = do
+      let t' = (foldr (~>) t (map (\(TypeEmpty t) -> t) args))
+          vs = freeVars t'
+          sc = quantify vs t'
+          a  = c :>: sc
+      return $ a:as
 
 -- | Infer the type of an implicit bind group.
 tiBindGroup :: Infer BindGroup [Assump]
