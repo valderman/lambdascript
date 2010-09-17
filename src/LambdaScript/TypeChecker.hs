@@ -26,7 +26,25 @@ tiDef :: Infer Def [Assump]
 tiDef as (BGroup g) = do
   (as', bg) <- tiBindGroup as g
   return (as', BGroup bg)
-tiDef as d@(TypeDecl _ _) = return (as, d) -- TODO: add constructor types here
+tiDef as d@(TypeDef nt) =
+  error "TODO: Add type definitions" -- addConstructors as nt
+tiDef as d@(TypeDecl (VIdent id) t) =
+  -- Quantify over all free vars, as no identifier in a type declaration can
+  -- be previously bound.
+  return ((id :>: quantify (freeVars t') t') : as, d)
+  where
+    -- We have to turn any instance of Int or Double into tInt or tDouble
+    -- respectively, since those are really polymorphic variants of the
+    -- internal *Num type.
+    t' = mangle t
+    mangle (TCon (TIdent "Double")) = tDouble
+    mangle (TCon (TIdent "Int"))    = tInt
+    mangle (TCon (TIdent "String")) = tString
+    mangle (TLst t)                 = TLst $ mangle t
+    mangle (TTup ts)                = TTup $ map mangle ts
+    mangle (TApp a b)               = TApp (mangle a) (mangle b)
+    mangle (TOp a b)                = TOp (mangle a) (mangle b)
+    mangle t                        = t
 tiDef _ d =
   fail $ "No implementation for inferring: " ++ show d
 
@@ -38,10 +56,18 @@ tiBindGroup as (BindGroup defs) = do
       (is, exs) = unzip isexs
       scs       = map toScheme ts
       as'       = zipWith (:>:) is scs ++ as
-  exs' <- sequence $ zipWith (\ex t -> do
+  exs' <- sequence $ zipWith (\(id, ex) t -> do
                                  (_, ex') <- tiExpr as' ex
+                                 -- If there is a type signature, we must unify
+                                 -- with it!
+                                 case find id as of
+                                   Just sc -> do
+                                     t' <- instantiate sc
+                                     unify t' t
+                                   _       ->
+                                     return ()
                                  unify (eUntyped ex') t
-                                 return ex') exs ts
+                                 return ex') isexs ts
   s <- getSubst
   -- Apply the global substitution to the types we got back, then make a list
   -- of all free type vars and quantify over them. Finally, add assumptions for
@@ -50,7 +76,16 @@ tiBindGroup as (BindGroup defs) = do
       vs   = foldr1 union (map freeVars ts') \\ freeVars (apply s as)
       scs' = map (quantify vs) ts'
       as'' = zipWith (:>:) is scs' ++ as
+  -- Check that all definitions match any applicable type declarations.
+  sequence_ $ zipWith compareWithSigs is scs'
   return (as'', BindGroup $ zipWith ConstDef (map Ident is) exs')
+  
+  where
+    compareWithSigs id sc = do
+      case find id as of
+        Just sc' | sc' /= sc -> fail $ "Type signature of "
+                                     ++ id ++ " is too general!" 
+        _                    -> return ()
 
 -- | Infer the type of an expression.
 tiExpr :: Infer Expr [Assump]
