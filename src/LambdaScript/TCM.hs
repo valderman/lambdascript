@@ -1,5 +1,6 @@
 module LambdaScript.TCM where
 import LambdaScript.Types
+import LambdaScript.Abs (Type (..), VIdent (..))
 
 newtype TCM a = TCM {runT :: Int -> Subst -> (a, Int, Subst)}
 
@@ -10,9 +11,9 @@ instance Monad TCM where
   m >>= f  = TCM $ \n s -> case runT m n s of
                              (a, n', s') -> runT (f a) n' s'
 
--- | Create a new type variable with the given kind.
-newTVar :: Kind -> TCM AbsType
-newTVar k = TCM $ \n s -> (ATVar $ ATyvar (enumId n) k, n+1, s)
+-- | Create a new type variable.
+newTVar :: TCM Type
+newTVar = TCM $ \n s -> (TVar $ VIdent (enumId n), n+1, s)
 
 -- | Return the current substitution
 getSubst :: TCM Subst
@@ -24,13 +25,13 @@ extSubst s' = TCM $ \n s -> ((), n, s' `compose` s)
 
 -- | Instantiate a type scheme; this entails binding a new type variable to
 --   each generic, quantified variable of the type.
-instantiate :: Scheme -> TCM AbsType
-instantiate (Forall ks t) =
-  mapM newTVar ks >>= \ts -> return $ inst ts t
+instantiate :: Scheme -> TCM Type
+instantiate (Forall n t) =
+  mapM (\_ -> newTVar) (replicate n ()) >>= \ts -> return $ inst ts t
 
 -- | Unify two types, extending the global substitution with the resulting
 --   substitution.
-unify :: AbsType -> AbsType -> TCM ()
+unify :: Type -> Type -> TCM ()
 unify a b = do
   s <- getSubst
   extSubst =<< mgu (apply s a) (apply s b)

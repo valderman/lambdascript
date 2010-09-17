@@ -5,136 +5,50 @@ import LambdaScript.Abs
 
 type ID = String
 
-t2a :: Type -> AbsType
-t2a (TVar (VIdent id)) = ATVar $ ATyvar id Star
-t2a (TCon (TIdent id)) = ATCon $ ATycon id Star
-t2a (TLst t)           = list $ t2a t
-t2a (TTup ts)          = tuple $ map t2a ts
-t2a (TApp a b)         = ATApp (t2a a) (t2a b)
-t2a (TOp a b)          = t2a a ~> t2a b
-t2a (TGen n)           = ATGen $ fromIntegral n
-
-a2t :: AbsType -> Type
-a2t (ATVar (ATyvar id _)) = TVar $ VIdent id
-a2t (ATCon (ATycon id _)) = TCon $ TIdent id
-a2t (ATApp (ATApp a l) r)
-  | a == tArrow           = TOp (a2t l) (a2t r)
-a2t (ATApp l r)           = TApp (a2t l) (a2t r)
-a2t (ATGen n)             = TGen $ fromIntegral n
-
-data Kind
-  = Star
-  | KFun Kind Kind
-    deriving (Eq, Show)
-
--- | Type variable; an identifier and a kind
-data ATyvar = ATyvar ID Kind deriving Eq
-
--- | Type constructor; once again identifier + kind
-data ATycon = ATycon ID Kind deriving Eq
-
--- | Abstract types; type var, aggregate type, type constructor and quantified
---   type var.
-data AbsType
-  = ATVar ATyvar
-  | ATApp AbsType AbsType
-  | ATCon ATycon
-  | ATGen Int
-    deriving Eq
-
--- | Pretty printer for types; tuples are decidedly non-pretty.
-instance Show AbsType where
-  show (ATVar v) =
-    show v
-  show (ATApp t1 t2@(ATApp t _)) | t == tArrow =
-    show t1 ++ " (" ++ show t2 ++ ")"
-  show (ATApp t1 t2) | t1 == tArrow =
-    case t2 of
-      ATApp _ _ -> "(" ++ show t2 ++ ") " ++ show t1
-      _         -> show t2 ++ " " ++ show t1
-  show (ATApp t1 t2) | t1 == tList =
-    "[" ++ show t2 ++ "]"
-  show (ATApp t1 t2) | otherwise =
-    show t1 ++ " " ++ show t2
-  show (ATCon c) =
-    show c
-  show (ATGen n) =
-    enumId n ++ "g"
-
-instance Show ATyvar where
-  show (ATyvar id _) = id
-
-instance Show ATycon where
-  show (ATycon id _) = id
-
 -- | Make an identifier out of an int
 enumId :: Int -> ID
 enumId n = '*' : show n
 
--- | Create a kind with arity n.
-funKind :: Int -> Kind
-funKind 0 = Star
-funKind n = KFun Star (funKind $ n-1)
-
 -- | All our basic types.
-tUnit, tChar, tInt, tDouble, tList, tArrow, tString :: AbsType
-tTuple :: Int -> AbsType
-tUnit    = ATCon $ ATycon "()" Star
-tChar    = ATCon $ ATycon "Char" Star
-tBool    = ATCon $ ATycon "Bool" Star
-tInt     = num $ ATCon $ ATycon "Int" Star
-tDouble  = num $ ATCon $ ATycon "Double" Star
-tList    = ATCon $ ATycon "[]" (KFun Star Star)
-tNum     = ATCon $ ATycon "*Num" Star
-tArrow   = ATCon $ ATycon "->" (KFun Star (KFun Star Star))
-tTuple n = ATCon $ ATycon ("(" ++ replicate n ',' ++ ")") (funKind n)
+tUnit, tChar, tInt, tDouble, tList, tArrow, tString :: Type
+tTuple :: Int -> Type
+tUnit    = TCon $ TIdent "()"
+tChar    = TCon $ TIdent "Char"
+tBool    = TCon $ TIdent "Bool"
+tInt     = num  $ TCon $ TIdent "Int"
+tDouble  = num  $ TCon $ TIdent "Double"
+tList    = TCon $ TIdent "[]"
+tNum     = TCon $ TIdent "*Num"
+tArrow   = TCon $ TIdent "->"
+tTuple n = TCon $ TIdent ("(" ++ replicate n ',' ++ ")")
 tString  = list tChar
 
 -- | Create an aggregate type.
-(~>) :: AbsType -> AbsType -> AbsType
-f ~> x   = ATApp (ATApp tArrow f) x
+(~>) :: Type -> Type -> Type
+f ~> x = f `TOp` x
 infixr 4 ~>
 
 -- | Create a list of something.
-list :: AbsType -> AbsType
-list t   = ATApp tList t
+list :: Type -> Type
+list t   = TLst t
 
 -- | Create a tuple from the given types.
-tuple :: [AbsType] -> AbsType
-tuple ts = foldl' (\x a -> ATApp x a) (tTuple (length ts)) ts
+tuple :: [Type] -> Type
+tuple ts = TTup ts
 
 -- | Create a numeric type.
-num :: AbsType -> AbsType
-num t = ATApp tNum t
-
--- | Everything that has a kind; types, for example.
-class HasKind t where
-  -- | Returns the kind of the given kind-having thing.
-  kind :: t -> Kind
-
-instance HasKind ATyvar where
-  kind (ATyvar _ k) = k
-
-instance HasKind ATycon where
-  kind (ATycon _ k) = k
-
-instance HasKind AbsType where
-  kind (ATVar v)   = kind v
-  kind (ATCon c)   = kind c
-  kind (ATApp a _) = case kind a of
-                       (KFun _ k) -> k
-                       _          -> Star
-  kind (ATGen _)   = Star
+num :: Type -> Type
+num t = TApp tNum t
 
 -- | Type of substitution.
-type Subst = [(ATyvar, AbsType)]
+type Subst = [(VIdent, Type)]
 
 -- | The empty substitution.
 nullSubst :: Subst
 nullSubst = []
 
 -- | Substitute a variable for a type; a singleton substitution.
-(+->) :: ATyvar -> AbsType -> Subst
+(+->) :: VIdent -> Type -> Subst
 v +-> t = [(v, t)]
 
 -- | Type-like constructs; this can be, for example, an actual type, a list of
@@ -143,24 +57,30 @@ class Types a where
   -- | Apply a substitution to a type-like.
   apply    :: Subst -> a -> a
   -- | List all free type variables found in a type-like.
-  freeVars :: a -> [ATyvar]
+  freeVars :: a -> [VIdent]
 
-instance Types AbsType where
-  apply s t@(ATVar v) = case lookup v s of
+instance Types Type where
+  apply s t@(TVar v)  = case lookup v s of
                           Just t' -> t'
                           _       -> t
-  apply s (ATApp a b) = ATApp (apply s a) (apply s b)
+  apply s (TApp a b)  = TApp (apply s a) (apply s b)
+  apply s (TOp a b)   = TOp (apply s a) (apply s b)
+  apply s (TLst t)    = TLst $ apply s t
+  apply s (TTup ts)   = TTup $ map (apply s) ts
   apply s t           = t
 
-  freeVars (ATVar v)   = [v]
-  freeVars (ATApp a b) = freeVars a `union` freeVars b
-  freeVars _           = []
+  freeVars (TVar v)   = [v]
+  freeVars (TApp a b) = freeVars a `union` freeVars b
+  freeVars (TOp a b)  = freeVars a `union` freeVars b
+  freeVars (TLst t)   = freeVars t
+  freeVars (TTup ts)  = foldr union [] (map freeVars ts)
+  freeVars _          = []
 
 instance Types a => Types [a] where
   apply s ts  = map (apply s) ts
   freeVars ts = foldr union [] (map freeVars ts)
 
-instance Types (ATyvar, AbsType) where
+instance Types (VIdent, Type) where
   apply s (v, t)  = (v, apply s t)
   freeVars (_, t) = freeVars t
 
@@ -180,57 +100,69 @@ merge s1 s2 =
                ++ show s1
                ++ " and "
                ++ show s2
-  where allSame = and $ map (\v -> apply s1 (ATVar v) == apply s2 (ATVar v))
+  where allSame = and $ map (\v -> apply s1 (TVar v) == apply s2 (TVar v))
                             (map fst s1 `intersect` map fst s2)
 
 -- | Return a substitution representing the binding of the given type variable
 --   to the given type. If the kinds of the operands don't match, or if the
 --   occurs check fails, we error out.
-bind :: Monad m => ATyvar -> AbsType -> m Subst
-bind v t | t == ATVar v =
+bind :: Monad m => VIdent -> Type -> m Subst
+bind v t | t == TVar v =
   return nullSubst
-         | kind v /= kind t =
-  fail $ "Kind mismatch: " ++ show v ++ " of kind " ++ show (kind v) ++ " and "
-                           ++ show t ++ " of kind " ++ show (kind t)
          | v `elem` freeVars t =
   fail $ "Occurs check fails: " ++ show v ++ " and " ++ show t
          | otherwise =
   return $ v +-> t
 
 -- | Calculate the most generic unifier of the given types.
-mgu :: Monad m => AbsType -> AbsType -> m Subst
-mgu (ATApp a1 b1) (ATApp a2 b2) = do
+mgu :: Monad m => Type -> Type -> m Subst
+mgu (TApp a1 b1) (TApp a2 b2) = do
   a <- mgu a1 a2
   b <- mgu (apply a b1) (apply a b2)
   return $ b `compose` a
-mgu (ATVar v) t =
+mgu (TOp a1 b1) (TOp a2 b2) = do
+  a <- mgu a1 a2
+  b <- mgu (apply a b1) (apply a b2)
+  return $ b `compose` a
+mgu (TLst t1) (TLst t2) = do
+  mgu t1 t2
+mgu (TTup ts1) (TTup ts2) = do
+  ss <- sequence $ zipWith mgu ts1 ts2
+  return $ foldr union [] ss
+mgu (TVar v) t =
   bind v t
-mgu t (ATVar v) =
+mgu t (TVar v) =
   bind v t
-mgu (ATCon c1) (ATCon c2) | c1 == c2 =
+mgu (TCon c1) (TCon c2) | c1 == c2 =
   return nullSubst
 mgu t1 t2 =
   fail $ "Types don't unify: " ++ show t1 ++ " and " ++ show t2
 
-data Scheme = Forall [Kind] AbsType deriving (Show, Eq)
+-- | A type scheme consists of a number of type vars (the first constructor)
+--   and a type containing (at most) that many quantified type variables,
+--   represented by TGen type constructors.
+data Scheme = Forall Int Type deriving (Show, Eq)
 
 instance Types Scheme where
-  apply s (Forall ks t) = Forall ks (apply s t)
-  freeVars (Forall _ t) = freeVars t
+  apply s (Forall n t)  = Forall n (apply s t)
+  freeVars (Forall n t) = freeVars t
 
-toScheme :: AbsType -> Scheme
-toScheme t = Forall [] t
+-- | Creates a type scheme from a type, without quantifying over any type vars.
+--   This is useful when we need a type scheme for an assumption but we don't
+--   want any of its type vars to be polymorphic.
+toScheme :: Type -> Scheme
+toScheme t = Forall 0 t
 
 -- | Quantify the given type over the specified type variables.
 --   This means that the intersection of the given vars and the free type vars
 --   of the given type is "put to rest," so to speak. It's determined once and
 --   for all that they're polymorphic, and no longer need concern the outside
 --   world.
-quantify :: [ATyvar] -> AbsType -> Scheme
-quantify vs t = Forall (map kind vs) (apply s t)
+quantify :: [VIdent] -> Type -> Scheme
+quantify vs t = Forall (length vs) (apply s t)
   where
     vs' = filter (`elem` vs) (freeVars t)
-    s   = zip vs' (map ATGen [0..])
+    s   = zip vs' (map TGen [0..])
 
 data Assump = ID :>: Scheme deriving Show
 
@@ -246,9 +178,12 @@ find id _ = fail $ "Unbound identifier: " ++ id
 
 -- | Instantiation is basically apply for generic, quantified typevars.
 class Instantiate t where
-  inst :: [AbsType] -> t -> t
+  inst :: [Type] -> t -> t
 
-instance Instantiate AbsType where
-  inst ts (ATGen n)   = ts !! n
-  inst ts (ATApp a b) = ATApp (inst ts a) (inst ts b)
-  inst ts t           = t
+instance Instantiate Type where
+  inst ts (TGen n)   = ts !! fromInteger n
+  inst ts (TApp a b) = TApp (inst ts a) (inst ts b)
+  inst ts (TOp a b)  = TOp (inst ts a) (inst ts b)
+  inst ts (TLst t)   = TLst (inst ts t)
+  inst ts (TTup tts) = TTup (map (inst ts) tts)
+  inst ts t          = t

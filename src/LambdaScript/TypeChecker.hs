@@ -33,7 +33,7 @@ tiDef _ d =
 -- | Infer the type of an implicit bind group.
 tiBindGroup :: Infer BindGroup [Assump]
 tiBindGroup as (BindGroup defs) = do
-  ts <- mapM (\_ -> newTVar Star) defs
+  ts <- mapM (\_ -> newTVar) defs
   let isexs     = map (\(ConstDef (Ident id) ex) -> (id, ex)) defs
       (is, exs) = unzip isexs
       scs       = map toScheme ts
@@ -69,7 +69,7 @@ tiExpr as e@(EStr _) = do
 tiExpr as e@(EChar _) = do
   return (as, eTyped e tChar)
 tiExpr as (EList exs) = do
-  v <- newTVar Star
+  v <- newTVar
   exs' <- mapM (\ex -> tiExpr as ex >>= return . snd) exs
   mapM_ (unify v) (map eUntyped exs')
   return (as, eTyped (EList exs') v)
@@ -77,7 +77,7 @@ tiExpr as (ETuple exs) = do
   exs' <- mapM (\ex -> tiExpr as ex >>= return . snd) exs
   return (as, eTyped (ETuple exs') (tuple $ map eUntyped exs'))
 tiExpr as (EApp f x) = do
-  t <- newTVar Star
+  t <- newTVar
   (_, f') <- tiExpr as f
   (_, x') <- tiExpr as x
   unify (eUntyped f') (eUntyped x' ~> t)
@@ -90,7 +90,7 @@ tiExpr as (ECons x xs) = do
 tiExpr as (EConcat xs ys) = do
   (_, xs') <- tiExpr as xs
   (_, ys') <- tiExpr as ys
-  v <- newTVar Star
+  v <- newTVar
   unify (list v) (eUntyped xs')
   unify (list v) (eUntyped ys')
   return (as, eTyped (EConcat xs' ys') (list v))
@@ -131,13 +131,13 @@ tiCase as e = do
   let (ECase ex cps) = e
   (_, ex') <- tiExpr as ex
   cps' <- mapM (tiCasePat (eUntyped ex') as) cps
-  v <- newTVar Star
+  v <- newTVar
   let (ts, cps'') = unzip cps'
   mapM_ (unify v) ts
   return (as, eTyped (ECase ex' cps'') v)
 
 -- | Infer the type of a case battern.
-tiCasePat :: AbsType -> Infer CasePattern AbsType
+tiCasePat :: Type -> Infer CasePattern Type
 tiCasePat exType as (CPNoGuards p ex) = do
   -- make sure the type of the pattern and the expression matched against
   -- are the same.
@@ -151,12 +151,12 @@ tiCasePat exType as (CPGuards p guardeds) = do
   unify exType (pUntyped p')
   tsgs <- mapM (tiGCE as') guardeds
   let (ts, gs) = unzip tsgs
-  v <- newTVar Star
+  v <- newTVar
   mapM_ (unify v) ts
   return (v, CPGuards p' gs)
 
 -- | Infer the type of a guarded case expression.
-tiGCE :: Infer GuardedCaseExpr AbsType
+tiGCE :: Infer GuardedCaseExpr Type
 tiGCE as (GuardedCaseExpr (GuardExpr gex) ex) = do
   (_, gex') <- tiExpr as gex
   unify tBool (eUntyped gex')
@@ -168,7 +168,7 @@ tiNumOp :: [Assump] -> (Expr->Expr->Expr) -> Expr -> Expr -> TCM([Assump],Expr)
 tiNumOp as cons x y = do
   (_, x') <- tiExpr as x
   (_, y') <- tiExpr as y
-  t <- newTVar Star >>= return . num
+  t <- newTVar >>= return . num
   unify t (eUntyped x')
   unify t (eUntyped y')
   return (as, eTyped (cons x' y') t)
@@ -186,27 +186,27 @@ tiComparison as cons x y = do
   return (as, eTyped (cons x' y') tBool)
 
 -- | Helper to type annotate a pattern.
-pTyped :: Pattern -> AbsType -> Pattern
-pTyped p at = PTyped p (a2t at)
+pTyped :: Pattern -> Type -> Pattern
+pTyped p t = PTyped p t
 
 -- | Helper to extract a type from an annotated pattern.
-pUntyped :: Pattern -> AbsType
-pUntyped (PTyped _ t) = t2a t
+pUntyped :: Pattern -> Type
+pUntyped (PTyped _ t) = t
 pUntyped p            = error $ "Can't untype: " ++ show p
 
 -- | Helper to type annotate an expression.
-eTyped :: Expr -> AbsType -> Expr
-eTyped e at = ETyped e (a2t at)
+eTyped :: Expr -> Type -> Expr
+eTyped e t = ETyped e t
 
 -- | Helper to extract a type from an annotated expression.
-eUntyped :: Expr -> AbsType
-eUntyped (ETyped _ t) = t2a t
+eUntyped :: Expr -> Type
+eUntyped (ETyped _ t) = t
 eUntyped p            = error $ "Can't untype: " ++ show p
 
 -- | Infer the type of a pattern.
 tiPat :: Infer Pattern [Assump]
 tiPat as p@(PID (VIdent id)) = do
-  v <- newTVar Star
+  v <- newTVar
   return (id :>: toScheme v:as, pTyped p v)
 tiPat as p@(PInt n) = do
   return (as, pTyped p tInt)
@@ -217,7 +217,7 @@ tiPat as p@(PChar c) = do
 tiPat as p@(PString s) = do
   return (as, pTyped p tString)
 tiPat as p@(PWildcard) = do
-  v <- newTVar Star
+  v <- newTVar
   return (as, pTyped p v)
 tiPat as (PConstr (TIdent id) pats) = do
   -- lookup type of constructor
@@ -226,14 +226,14 @@ tiPat as (PConstr (TIdent id) pats) = do
   -- TODO: check that we have the correct # of args!
   (as', ps) <- tiPats as pats
   let ts = map pUntyped ps
-  t' <- newTVar Star
+  t' <- newTVar
   -- unify instantiated type with the inferred arg types
   unify t (foldr (~>) t' ts)
   return (as', pTyped (PConstr (TIdent id) ps) t')
 tiPat as (PList pats) = do
   -- create a new type variable as a representative for the content type of the
   -- list.
-  v <- newTVar Star
+  v <- newTVar
   -- infer types for all patterns within list
   (as', ps) <- tiPats as (map (\(PatC p) -> p) pats)
   -- make sure the types of all arguments unify with each other
