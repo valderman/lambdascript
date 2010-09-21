@@ -96,6 +96,12 @@ exprBGs (ECase ex cps) =
   ECase (exprBGs ex) (L.map cpBGs cps)
 exprBGs (EBinds ex defs) =
   EBinds (exprBGs ex) (((\(Program defs) -> defs). bindGroups . Program) defs)
+exprBGs (EAnd e1 e2) =
+  EAnd (exprBGs e1) (exprBGs e2)
+exprBGs (EOr e1 e2) =
+  EOr (exprBGs e1) (exprBGs e2)
+exprBGs (ENot e) =
+  ENot (exprBGs e)
 -- The rest can't contain expressions or bind groups, so we don't care about
 -- them.
 exprBGs ex =
@@ -154,6 +160,9 @@ depExpr = go
     go (ELE a b)         = go a `L.union` go b
     go (EGE a b)         = go a `L.union` go b
     go (ENE a b)         = go a `L.union` go b
+    go (EAnd a b)        = go a `L.union` go b
+    go (EOr a b)         = go a `L.union` go b
+    go (ENot a)          = go a
     go (ELambda v x)     = go x
     go (EIf a b c)       = go a `L.union` go b `L.union` go c
     go (ECase ex pats)   = foldr L.union (go ex) (L.map depCasePat pats)

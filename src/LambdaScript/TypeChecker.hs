@@ -158,6 +158,22 @@ tiExpr as (ELE x y)   = tiComparison as ELE x y
 tiExpr as (ENE x y)   = tiComparison as ENE x y
 tiExpr as (EGE x y)   = tiComparison as EGE x y
 tiExpr as (ECase e c) = tiCase as (ECase e c)
+tiExpr as (EAnd x y) = do
+  (_, x') <- tiExpr as x
+  (_, y') <- tiExpr as y
+  unify tBool (eUntyped x')
+  unify tBool (eUntyped y')
+  return (as, eTyped (EAnd x' y') tBool)
+tiExpr as (EOr x y) = do
+  (_, x') <- tiExpr as x
+  (_, y') <- tiExpr as y
+  unify tBool (eUntyped x')
+  unify tBool (eUntyped y')
+  return (as, eTyped (EOr x' y') tBool)
+tiExpr as (ENot ex) = do
+  (_, ex') <- tiExpr as ex
+  unify tBool (eUntyped ex')
+  return (as, eTyped (ENot ex') tBool)
 tiExpr as (ELambda pats ex) = do
   (as', pats') <- tiPats as pats
   (_, ex') <- tiExpr as' ex

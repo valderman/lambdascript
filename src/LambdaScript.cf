@@ -127,9 +127,12 @@ EList.    Expr8 ::= "[" [Expr] "]" ;
 ETuple.   Expr8 ::= "(" [Expr] ")" ;
 -- Lv. 7: function application
 EApp.     Expr7 ::= Expr7 Expr8 ;
--- Lv. 6: cons
+-- Lv. 6: cons and negation
 ECons.    Expr6 ::= Expr7 ":" Expr6 ;
--- Lv. 5: list and multiplication operators
+ENot.     Expr6 ::= "!" Expr6 ;
+-- Lv. 5: list, logic and multiplication operators
+EAnd.     Expr5 ::= Expr5 "&&" Expr6 ;
+EOr.      Expr5 ::= Expr5 "||" Expr6 ;
 EConcat.  Expr5 ::= Expr5 "++" Expr6 ;
 EMul.     Expr5 ::= Expr5 "*" Expr6 ;
 EDiv.     Expr5 ::= Expr5 "/" Expr6 ;
