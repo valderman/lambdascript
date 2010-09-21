@@ -46,6 +46,10 @@ tuple ts = TTup ts
 num :: Type -> Type
 num t = TApp tNum t
 
+-- | Create a type variable from an identifier.
+tv :: ID -> Type
+tv = TVar . VIdent
+
 -- | Type of substitution.
 type Subst = [(VIdent, Type)]
 

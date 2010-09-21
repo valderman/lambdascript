@@ -4,12 +4,14 @@ import Data.List hiding (find)
 import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
+import LambdaScript.TypeDefaults (assumptions)
+
 import LambdaScript.Print
 
 -- | Infer types for the whole progran.
 infer :: Program -> (Program, Subst)
 infer (Program defs) =
-  case runTCM $ tiDefs [] $ defs of
+  case runTCM $ tiDefs assumptions $ defs of
     ((_, defs'), subst) -> (Program defs', subst)
 
 -- | Infer the type of a list of definitions.
@@ -159,7 +161,7 @@ tiExpr as (ECase e c) = tiCase as (ECase e c)
 tiExpr as (ELambda pats ex) = do
   (as', pats') <- tiPats as pats
   (_, ex') <- tiExpr as' ex
-  let t = foldr1 (~>) $ map pUntyped pats' ++ [eUntyped ex']
+  let t = foldr (~>) (eUntyped ex') $ map pUntyped pats'
   return (as, eTyped (ELambda pats' ex') t)
 tiExpr as (EIf cond thenEx elseEx) = do
   (_, cond') <- tiExpr as cond
@@ -309,7 +311,8 @@ tiPat as (PCons p ps) = do
 tiPats :: Infer [Pattern] [Assump]
 tiPats as ps = do
   (as', ps') <- foldM pat (as, []) ps
-  return (as', ps')
+  -- reverse ps', because foldM is a left fold
+  return (as', reverse ps')
   where
     pat (as, ps) x = do
       (as', p') <- tiPat as x
