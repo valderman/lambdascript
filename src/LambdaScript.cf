@@ -150,7 +150,7 @@ EIf.      Expr1 ::= "if" Expr "then" Expr "else" Expr ;
 ECase.    Expr1 ::= "case" Expr "of" [CasePattern] ;
 EBinds.   Expr  ::= Expr2 "{" [Def] "}" ;
 -- internal: type annotated expression
-internal ETyped. Expr ::= "(" Expr " :: " Type ")" ;
+internal ETyped. Expr ::= Expr " :: " Type ;
 coercions Expr 9 ;
 separator Expr "," ;
 
