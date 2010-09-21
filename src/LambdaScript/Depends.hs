@@ -50,7 +50,66 @@ bindGroups (Program defs) =
     mkBindGroup ids =
       BindGroup $ L.map id2const ids
     id2const id =
-      ConstDef (Ident id) (funs ! id)
+      ConstDef (Ident id) (exprBGs $ funs ! id)
+
+-- | Perform dependency analysis, grouping and sorting within the given
+--   expression. This basically consists of hunting down bind clauses and
+--   giving them the same treatment as the top level environment.
+exprBGs :: Expr -> Expr
+exprBGs (EList exs) =
+  EList $ L.map exprBGs exs
+exprBGs (ETuple exs) =
+  ETuple $ L.map exprBGs exs
+exprBGs (EApp e1 e2) =
+  EApp (exprBGs e1) (exprBGs e2)
+exprBGs (ECons e1 e2) =
+  ECons (exprBGs e1) (exprBGs e2)
+exprBGs (EConcat e1 e2) =
+  EConcat (exprBGs e1) (exprBGs e2)
+exprBGs (EMul e1 e2) =
+  EMul (exprBGs e1) (exprBGs e2)
+exprBGs (EDiv e1 e2) =
+  EDiv (exprBGs e1) (exprBGs e2)
+exprBGs (EMod e1 e2) =
+  EMod (exprBGs e1) (exprBGs e2)
+exprBGs (EAdd e1 e2) =
+  EAdd (exprBGs e1) (exprBGs e2)
+exprBGs (ESub e1 e2) =
+  ESub (exprBGs e1) (exprBGs e2)
+exprBGs (EEq e1 e2) =
+  EEq (exprBGs e1) (exprBGs e2)
+exprBGs (ELT e1 e2) =
+  ELT (exprBGs e1) (exprBGs e2)
+exprBGs (EGT e1 e2) =
+  EGT (exprBGs e1) (exprBGs e2)
+exprBGs (ELE e1 e2) =
+  ELE (exprBGs e1) (exprBGs e2)
+exprBGs (EGE e1 e2) =
+  EGE (exprBGs e1) (exprBGs e2)
+exprBGs (ENE e1 e2) =
+  ENE (exprBGs e1) (exprBGs e2)
+exprBGs (ELambda pats ex) =
+  ELambda pats (exprBGs ex)
+exprBGs (EIf a b c) =
+  EIf (exprBGs a) (exprBGs b) (exprBGs c)
+exprBGs (ECase ex cps) =
+  ECase (exprBGs ex) (L.map cpBGs cps)
+exprBGs (EBinds ex defs) =
+  EBinds (exprBGs ex) (((\(Program defs) -> defs). bindGroups . Program) defs)
+-- The rest can't contain expressions or bind groups, so we don't care about
+-- them.
+exprBGs ex =
+  ex
+
+-- | Same as for 'exprBGs' but for case patterns.
+cpBGs :: CasePattern -> CasePattern
+cpBGs (CPGuards p guardeds) =
+  CPGuards p $ L.map gceBGs guardeds
+  where
+    gceBGs (GuardedCaseExpr (GuardExpr ge) e) =
+      GuardedCaseExpr (GuardExpr $ exprBGs ge) $ exprBGs e
+cpBGs (CPNoGuards p ex) =
+  CPNoGuards p (exprBGs ex)
 
 -- | Group a list of (Ident, Expr) by mutual recursion, then sort all such
 --   units by dependency.
