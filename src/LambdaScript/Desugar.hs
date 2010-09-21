@@ -34,18 +34,22 @@ groupDefs =
       nameOrder f1 f2 == EQ
 
 -- | Desugar all definitions for a given symbol.
+--   We call desuExpr after mergeCases because then we can recursively get
+--   all the expressions with one call, as opposed to hunting down every
+--   occurrence of an Expr somewhere else and desugaring it there.
 deFunDefs :: [Def] -> Def
 deFunDefs defs =
-  Const $ ConstDef (Ident id) (lambdafy patsInFirst
+  Const $ ConstDef (Ident id) (lambdafy (map desuPat patsInFirst)
+                              $ desuExpr
                               $ mergeCases
                               $ map casefy thePatExprs)
   where
     (id, patsInFirst) =
       case head defs of
         (FunDef (VIdent id) (TPNoGuards pats _)) ->
-          (id, pats)
+          (id, map desuPat pats)
         (FunDef (VIdent id) (TPGuards pats _)) ->
-          (id, pats)
+          (id, map desuPat pats)
     thePatExprs =
       map getPatExprs defs
     getPatExprs (FunDef _ tp) =
@@ -63,7 +67,7 @@ mergeCases :: [Expr] -> Expr
 mergeCases [soleCase] =
   soleCase
 mergeCases cases =
-  ECase expr (foldr addCase [] cases)
+  ECase (desuExpr expr) (foldr addCase [] cases)
   where
     expr =
       case head cases of (ECase ex _) -> ex
