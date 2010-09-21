@@ -47,9 +47,9 @@ deFunDefs defs =
     (id, patsInFirst) =
       case head defs of
         (FunDef (VIdent id) (TPNoGuards pats _)) ->
-          (id, map desuPat pats)
+          (id, pats)
         (FunDef (VIdent id) (TPGuards pats _)) ->
-          (id, map desuPat pats)
+          (id, pats)
     thePatExprs =
       map getPatExprs defs
     getPatExprs (FunDef _ tp) =
