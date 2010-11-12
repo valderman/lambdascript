@@ -1,0 +1,13 @@
+Lambdascript is a prototype language for strongly typed, lazy, purely
+functional client side web scripting. It provides a basic subset of
+Haskell's functionality, compiled into Javascript.
+
+Due to its clumsy parser and fugly syntax, the plan is to scrap the thing
+after it's more or less done (hence, prototype) and rewrite the project using
+saner tools (BNFC is somewhat suboptimal for anything that's supposed to
+actually be of any use) to enable some essential features (read: polymorphism)
+and nicer syntax.
+
+In order to compile LS, you need bnfc (get it from
+http://code.haskell.org/bnfc/ or through your system's package manager if
+you're on Debian or any of its derivatives.)
