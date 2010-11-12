@@ -63,6 +63,17 @@ constrID s = do
     Just id -> return id
     _       -> fail $ "Internal error: constrID " ++ s ++ " failed!"
 
+-- | Run the given computation using the current environment, returning any
+--   emitted statements after the run, and discarding those statements from
+--   the environment.
+isolate :: CG a -> CG (a, [Stmt])
+isolate m = do
+  st <- get
+  case runState m st of
+    (a, st') -> do
+      put st' {code = code st}
+      return (a, reverse $ code st')
+
 -- | Generate code for a function, using the given generator.
 gen :: (Expr -> CG ())     -- ^ Generator to use for code generation.
     -> Map String ConstrID -- ^ Mapping of constructor names to IDs.
@@ -72,6 +83,6 @@ gen m cs (ConstDef (Abs.Ident id) ex) =
   case runState (m ex) (blankState cs) of
     (_, st) -> Function {
         funName = id,
-        mod     = undefined,
+        mod     = "",
         stmts   = reverse $ code st
       }

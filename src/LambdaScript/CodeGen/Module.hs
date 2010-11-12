@@ -7,10 +7,10 @@ data Function = Function {
     funName :: String,
     mod     :: String,
     stmts   :: [Stmt]
-  }
+  } deriving Show
 
 -- | Data type representing a single module.
 data Module = Module {
     modName :: String,
     funcs   :: [Function]
-  }
+  } deriving Show

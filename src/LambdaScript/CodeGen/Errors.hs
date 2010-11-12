@@ -1,7 +1,9 @@
 module LambdaScript.CodeGen.Errors where
 import LambdaScript.CodeGen.Ops
 
-lsError msg = Call (FunExp (FunIdent "error")) [Const $ StrConst msg]
+lsError :: String -> Stmt
+lsError msg = Return
+            $ Call (FunExp (FunIdent "error")) [Const $ strConst msg]
 
 lambdaPatternMismatch =
   lsError "Pattern mismatch in lambda!"
