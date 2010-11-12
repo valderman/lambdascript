@@ -8,42 +8,52 @@ import qualified Data.Map as M
 import Data.List (foldl1')
 import Control.Monad (foldM)
 
+-- | Generate code for all functions in a program.
 generate :: M.Map String ConstrID -> Program -> [Function]
 generate constrs (Program defs) =
   concat $ map (\(BGroup d) -> bindgroup constrs d) defs
 
+-- | Generate code for all functions in a bind group.
 bindgroup :: M.Map String ConstrID -> BindGroup -> [Function]
 bindgroup constrs (BindGroup defs) =
   map (gen function constrs) defs
 
+-- | Code generator for a single function.
 function :: Expr -> CG ()
 function ex = genExpr ex >>= stmt . Return
 
+-- | Smack an Eval primitive on an expression, provided that said expression
+--   actually is a thunk.
 eval :: Exp -> Exp
 eval ex@(Thunk _) = Eval ex
 eval ex           = ex
 
+-- | Turn an expression into a thunk, without double-thunking it.
 thunk :: Exp -> Exp
 thunk ex@(Thunk _) = ex
 thunk ex           = Thunk ex
 
+-- | Generate lazy code for a binary operator.
 oper :: Oper -> Expr -> Expr -> CG Exp
 oper op a b = do
   a' <- genExpr a
   b' <- genExpr b
   return . thunk $ Oper op (eval a') (eval b')
 
+-- | Create a conjunction of a bunch of expressions.
 allTrue :: [Exp] -> Exp
 allTrue = foldl1' (Oper And)
 
 genExpr :: Expr -> CG Exp
 genExpr (ETyped ex t) = genExpr' t ex
   where
+    -- Constructrors and vars; just look them up
     genExpr' t (EConstr (TIdent id)) = do
       constrID id >>= return . FunExp . Construct t
     genExpr' t (EVar (VIdent id)) = do
       idOf id >>= return . Ops.Ident
 
+    -- Constants; nothing strange here
     genExpr' t (EInt n) = do
       return . Ops.Const . NumConst . fromIntegral $ n
     genExpr' t (EDoub d) = do
@@ -53,11 +63,14 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (EStr s) = do
       return . Ops.Const . strConst $ s
     
+    -- Function application; generate code to obtain the function and to obtain
+    -- the argument, then eval function and apply without evaluating argument.
     genExpr' t (EApp f x) = do
       f' <- genExpr f
       x' <- genExpr x
       return . thunk $ Call (eval f') [x']
 
+    -- Various combinators for expressions; generate parts and thunk them.
     genExpr' t (EList (ex:exs)) = do
       ex' <- genExpr ex
       exs' <- genExpr (EList exs)
@@ -77,6 +90,7 @@ genExpr (ETyped ex t) = genExpr' t ex
       b' <- genExpr b
       return . thunk $ Call (FunExp $ FunIdent "concat") [a', b']
     
+    -- Loooooong list of binary operators; boring!
     genExpr' t (EAnd a b) = oper And a b
     genExpr' t (EOr  a b) = oper Or  a b
     genExpr' t (EMul a b) = oper Mul a b
@@ -91,33 +105,46 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (EGE  a b) = oper Ge  a b
     genExpr' t (ENE  a b) = oper Ne  a b
 
+    -- Lambda expression; generate it much as we would a case expression with
+    -- a single alternative.
     genExpr' t (ELambda ps ex) = do
       return . thunk . FunExp =<< genLambda ps ex
       where
         genLambda ps ex = do
           (args, stmts) <- isolate $ do
+            -- Create a var to refer to each argument
             vars <- mapM (\_ -> newVar) ps
+            -- Generate pattern matching and binding code
             (exps, binds) <- isolate $ sequence $ zipWith genPat (map Ops.Ident vars) ps
+            -- Generate code for the lambda body
             (body, stmts) <- isolate $ genExpr ex
+            -- If everything matches, we execute the body. Otherwise we
+            -- runtimefail.
             stmt $ If (allTrue exps)
                       (Block $ binds ++ stmts ++ [Return body])
                       (Just lambdaPatternMismatch)
             return vars
           return $ Lambda args (Block stmts)
 
+    -- If expression; basically a thunked a ? b : c;
     genExpr' t (EIf cond ifE elE) = do
       cond' <- genExpr cond
       ifE' <- genExpr ifE
       elE' <- genExpr elE
       return . thunk $ IfExp (eval cond') ifE' elE'
 
+    -- Case expression; works pretty much like a lambda with an arbitrary
+    -- number of bodies. (See also: recursive documentation)
     genExpr' t (ECase ex cps) = do
       ex' <- genExpr ex
       v <- newVar
       genCPs ex' v cps >>= stmt
       return $ Ops.Ident v
 
+    -- Bindings; we just generate them and assign them to local vars.
+    -- Or at least we will when we get around to implementing them.
     genExpr' t (EBinds ex defs) = do
+      error "NO BINDINGS YET!"
       mapM_ genDef defs
       genExpr ex
 
@@ -211,4 +238,5 @@ genCPs ex result (CPGuards p cases : ps) = do
 genCPs ex result [] = do
   return $ lsError "non-exhaustive pattern in function!"
 
-genDef = error "genDef lolwut"
+-- Placeholder for "gen function something something blah blah" 
+genDef = error "genDef: not implemented!"
