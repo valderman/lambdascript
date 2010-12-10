@@ -1,6 +1,7 @@
 module LambdaScript.TypeChecker (infer) where
 import Control.Monad
 import Data.List hiding (find)
+import Data.Maybe
 import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
@@ -34,7 +35,6 @@ tiDefs as defs =
     bindings =
       [id | BGroup (BindGroup ds) <- defs, ConstDef (Ident id) _ <- ds]
 
-
 -- | Infer the types of a definition, which at this point should be either a
 --   bind group, a type declaration or a type definition.
 tiDef :: Infer Def [Assump]
@@ -44,9 +44,13 @@ tiDef as (BGroup g) = do
 tiDef as d@(TypeDef nt) =
   addConstructors as d
 tiDef as d@(TypeDecl (VIdent id) t) =
-  -- Quantify over all free vars, as no identifier in a type declaration can
-  -- be previously bound.
-  return ((id :>: quantify (freeVars t') t') : as, d)
+  case findHigherOrderTV t of
+    tv@(x:xs) -> error $  "Type variables " ++ show tv
+                       ++ " don't represent concrete types."
+    _         ->
+      -- Quantify over all free vars, as no identifier in a type declaration can
+      -- be previously bound.
+      return ((id :>: quantify (freeVars t') t') : as, d)
   where
     -- We have to turn any instance of Int or Double into tInt or tDouble
     -- respectively, since those are really polymorphic variants of the
@@ -60,6 +64,21 @@ tiDef as d@(TypeDecl (VIdent id) t) =
     mangle (TApp a b)               = TApp (mangle a) (mangle b)
     mangle (TOp a b)                = TOp (mangle a) (mangle b)
     mangle t                        = t
+    -- Find all higher order type vars in a type signature, if any.
+    findHigherOrderTV (TLst t) =
+      findHigherOrderTV t
+    findHigherOrderTV (TTup ts) =
+      foldl' (\a x -> a `union` findHigherOrderTV x) [] ts
+    findHigherOrderTV (TApp t1 t2) =
+      case t1 of
+        TVar (VIdent id) ->
+          id : findHigherOrderTV t2
+        _                ->
+          findHigherOrderTV t1 `union` findHigherOrderTV t2
+    findHigherOrderTV (TOp t1 t2) =
+      findHigherOrderTV t1 `union` findHigherOrderTV t2
+    findHigherOrderTV _ =
+      []
 tiDef _ d =
   fail $ "No implementation for inferring: " ++ show d
 
