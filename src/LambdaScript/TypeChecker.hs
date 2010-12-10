@@ -18,10 +18,22 @@ infer (Program defs) =
 tiDefs :: Infer [Def] [Assump]
 tiDefs as defs =
   foldM (\(a, ds) d -> do
+            -- Ensure that, for type declarations, there exists an accompanying
+            -- binding. We do it here rather than elsewhere because here we
+            -- have the list of bindings handy.
+            case d of
+              TypeDecl (VIdent id) t | not (id `elem` bindings) ->
+                fail $  "Type declaration " ++ id ++ " :: " ++ show t
+                     ++ " lacks accompanying binding."
+              _ -> return ()
             (as', d') <- tiDef a d
             return (as', d':ds))
         (as, [])
         defs
+  where
+    bindings =
+      [id | BGroup (BindGroup ds) <- defs, ConstDef (Ident id) _ <- ds]
+
 
 -- | Infer the types of a definition, which at this point should be either a
 --   bind group, a type declaration or a type definition.

@@ -1,5 +1,4 @@
 * Disallow higher order type vars
-* Disallow type signatures without a corresponding definition
 * Add functions and globals to code gen environment
 * Compile types into a bunch of numbers the codegen can use
  (For example, data Bool = True | False; should give us a substitution
