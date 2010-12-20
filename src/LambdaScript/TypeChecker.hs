@@ -12,7 +12,7 @@ import LambdaScript.Print
 -- | Infer types for the whole progran.
 infer :: Program -> (Program, Subst)
 infer (Program defs) =
-  case runTCM $ tiDefs assumptions $ defs of
+  case runTCM $ tiDefs assumptions defs of
     ((_, defs'), subst) -> (Program defs', subst)
 
 -- | Infer the type of a list of definitions.
@@ -235,7 +235,7 @@ tiCase as e = do
   mapM_ (unify v) ts
   return (as, eTyped (ECase ex' cps'') v)
 
--- | Infer the type of a case battern.
+-- | Infer the type of a case pattern.
 tiCasePat :: Type -> Infer CasePattern Type
 tiCasePat exType as (CPNoGuards p ex) = do
   -- make sure the type of the pattern and the expression matched against

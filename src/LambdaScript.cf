@@ -95,7 +95,7 @@ NewType. NewType ::= "data" TIdent [AnyVar] "=" [Constructor] ;
 -- make a new type production so we can use a non-empty, whitespace-separated
 -- list of them in Constructor
 TypeEmpty. TypeEmpty ::= Type ;
-separator TypeEmpty "" ;
+separator TypeEmpty "," ;
 
 -- a constructor is a constructor followed by any number of types
 Constructor. Constructor ::= TIdent [TypeEmpty] ;
