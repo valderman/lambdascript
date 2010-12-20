@@ -3,7 +3,7 @@ HSFILES=LambdaScript/TypeChecker.hs LambdaScript/TCM.hs Main.hs LambdaScript/Dep
 all: .compiler
 
 .compiler: .bnfc $(HSFILES)
-	ghc --make $(HSFLAGS) Main.hs
+	ghc --make $(HSFLAGS) -o ../lsc Main.hs
 	touch .compiler
 
 .bnfc: LambdaScript.cf
