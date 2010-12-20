@@ -56,14 +56,6 @@ tiDef as d@(TypeDecl (VIdent id) t) =
     -- respectively, since those are really polymorphic variants of the
     -- internal *Num type.
     t' = mangle t
-    mangle (TCon (TIdent "Double")) = tDouble
-    mangle (TCon (TIdent "Int"))    = tInt
-    mangle (TCon (TIdent "String")) = tString
-    mangle (TLst t)                 = TLst $ mangle t
-    mangle (TTup ts)                = TTup $ map mangle ts
-    mangle (TApp a b)               = TApp (mangle a) (mangle b)
-    mangle (TOp a b)                = TOp (mangle a) (mangle b)
-    mangle t                        = t
     -- Find all higher order type vars in a type signature, if any.
     findHigherOrderTV (TLst t) =
       findHigherOrderTV t
@@ -82,6 +74,18 @@ tiDef as d@(TypeDecl (VIdent id) t) =
 tiDef _ d =
   fail $ "No implementation for inferring: " ++ show d
 
+-- | Turn built-in type synonyms into the types they actually represent.
+mangle :: Type -> Type
+mangle (TCon (TIdent "Double")) = tDouble
+mangle (TCon (TIdent "Int"))    = tInt
+mangle (TCon (TIdent "String")) = tString
+mangle (TLst t)                 = TLst $ mangle t
+mangle (TTup ts)                = TTup $ map mangle ts
+mangle (TApp a b)               = TApp (mangle a) (mangle b)
+mangle (TOp a b)                = TOp (mangle a) (mangle b)
+mangle t                        = t
+
+
 -- | Adds type information for all constructors of the given type.
 addConstructors :: Infer Def [Assump]
 addConstructors as td@(TypeDef (NewType id vars cons)) = do
@@ -90,7 +94,7 @@ addConstructors as td@(TypeDef (NewType id vars cons)) = do
   return (as', td)
   where
     addCon t as (Constructor (TIdent c) args) = do
-      let t' = (foldr (~>) t (map (\(TypeEmpty t) -> t) args))
+      let t' = mangle (foldr (~>) t (map (\(TypeEmpty t) -> t) args))
           vs = freeVars t'
           sc = quantify vs t'
           a  = c :>: sc
