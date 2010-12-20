@@ -56,23 +56,25 @@ tiDef as d@(TypeDecl (VIdent id) t) =
     -- respectively, since those are really polymorphic variants of the
     -- internal *Num type.
     t' = mangle t
-    -- Find all higher order type vars in a type signature, if any.
-    findHigherOrderTV (TLst t) =
-      findHigherOrderTV t
-    findHigherOrderTV (TTup ts) =
-      foldl' (\a x -> a `union` findHigherOrderTV x) [] ts
-    findHigherOrderTV (TApp t1 t2) =
-      case t1 of
-        TVar (VIdent id) ->
-          id : findHigherOrderTV t2
-        _                ->
-          findHigherOrderTV t1 `union` findHigherOrderTV t2
-    findHigherOrderTV (TOp t1 t2) =
-      findHigherOrderTV t1 `union` findHigherOrderTV t2
-    findHigherOrderTV _ =
-      []
 tiDef _ d =
   fail $ "No implementation for inferring: " ++ show d
+
+-- | Find all higher order type vars in a type signature, if any.
+findHigherOrderTV (TLst t) =
+  findHigherOrderTV t
+findHigherOrderTV (TTup ts) =
+  foldl' (\a x -> a `union` findHigherOrderTV x) [] ts
+findHigherOrderTV (TApp t1 t2) =
+  case t1 of
+    TVar (VIdent id) ->
+      id : findHigherOrderTV t2
+    _                ->
+      findHigherOrderTV t1 `union` findHigherOrderTV t2
+findHigherOrderTV (TOp t1 t2) =
+  findHigherOrderTV t1 `union` findHigherOrderTV t2
+findHigherOrderTV _ =
+  []
+
 
 -- | Turn built-in type synonyms into the types they actually represent.
 mangle :: Type -> Type
@@ -98,7 +100,12 @@ addConstructors as td@(TypeDef (NewType id vars cons)) = do
           vs = freeVars t'
           sc = quantify vs t'
           a  = c :>: sc
-      return $ a:as
+      case findHigherOrderTV t' of
+        tvs@(_:_) ->
+          fail $ "Data type contains illegal higher order typevars: "
+               ++ show tvs
+        _ ->
+          return $ a:as
 
 -- | Infer the type of an implicit bind group.
 tiBindGroup :: Infer BindGroup [Assump]
