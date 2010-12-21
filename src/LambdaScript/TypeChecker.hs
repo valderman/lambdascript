@@ -96,6 +96,7 @@ addConstructors as td@(TypeDef (NewType id vars cons)) = do
   return (as', td)
   where
     addCon t as (Constructor (TIdent c) args) = do
+      -- Make sure nobody tries to use a constructor that's already taken.
       case find c as of
         Just _ -> fail $ "Constructor name clash: " ++ c
         _      -> return ()

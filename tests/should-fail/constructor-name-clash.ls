@@ -1,1 +1,1 @@
-data Bool = True | False;
+data Foo = True | False;
