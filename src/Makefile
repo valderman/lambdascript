@@ -1,4 +1,4 @@
-HSFILES=LambdaScript/TypeChecker.hs LambdaScript/TCM.hs Main.hs LambdaScript/Depends.hs LambdaScript/Desugar.hs LambdaScript/Types.hs LambdaScript/CodeGen/Monad.hs LambdaScript/CodeGen/Ops.hs LambdaScript/CodeGen/Module.hs LambdaScript/CodeGen/Errors.hs LambdaScript/CodeGen/Generate.hs
+HSFILES=LambdaScript/TypeChecker.hs LambdaScript/TCM.hs Main.hs LambdaScript/Depends.hs LambdaScript/Desugar.hs LambdaScript/Types.hs LambdaScript/CodeGen/Monad.hs LambdaScript/CodeGen/Ops.hs LambdaScript/CodeGen/Module.hs LambdaScript/CodeGen/Errors.hs LambdaScript/CodeGen/Generate.hs LambdaScript/Builtins.hs
 
 all: .compiler
 
