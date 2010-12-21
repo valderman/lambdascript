@@ -5,14 +5,14 @@ import Data.Maybe
 import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
-import LambdaScript.Builtins (assumptions)
+import LambdaScript.Builtins (assumptions, types)
 
 import LambdaScript.Print
 
 -- | Infer types for the whole progran.
 infer :: Program -> (Program, Subst)
 infer (Program defs) =
-  case runTCM $ tiDefs assumptions defs of
+  case runTCM $ tiDefs assumptions (map TypeDef types ++ defs) of
     ((_, defs'), subst) -> (Program defs', subst)
 
 -- | Infer the type of a list of definitions.
