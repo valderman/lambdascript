@@ -54,8 +54,8 @@ test_failed() {
 
     # If there are no records of old test runs, run all tests before going
     # details.
-    if [ ! -e failed-good || ! -e failed-bad ] ; then
-	test_all
+    if [ ! -e failed-good ] || [ ! -e failed-bad ] ; then
+	    test_all
     fi
 
     let goodpassed=0
