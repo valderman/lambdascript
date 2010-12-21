@@ -4,14 +4,26 @@ import LambdaScript.CodeGen.Monad
 import LambdaScript.CodeGen.Ops as Ops
 import LambdaScript.CodeGen.Errors
 import LambdaScript.CodeGen.Module
+import LambdaScript.CodeGen.GenTypes
 import qualified Data.Map as M
-import Data.List (foldl1')
+import Data.List (foldl1', foldl')
 import Control.Monad (foldM)
 
 -- | Generate code for all functions in a program.
-generate :: M.Map String ConstrID -> Program -> [Function]
-generate constrs (Program defs) =
-  concat $ map (\(BGroup d) -> bindgroup constrs d) defs
+generate :: Program -> [Function]
+generate p@(Program defs) =
+  concat bgs
+  where
+    constrs =
+      allTypesMap p
+    -- this is just syntactic acrobatics to make writing a map with a multiline
+    -- lambda a little less painful by giving the list to map over before the
+    -- function.
+    bgs =
+      flip map defs $
+        \x -> case x of
+          BGroup d -> bindgroup constrs d
+          _        -> []
 
 -- | Generate code for all functions in a bind group.
 bindgroup :: M.Map String ConstrID -> BindGroup -> [Function]

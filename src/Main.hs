@@ -18,7 +18,7 @@ main = do
   p <- parseAndCheck fp
   putStrLn $ printTree p
   putStrLn "\n\n\n\n"
-  putStrLn $ show $ generate M.empty p
+  putStrLn $ show $ generate p
 
 -- | Parse and type check a program.
 parseAndCheck :: FilePath -> IO Program
