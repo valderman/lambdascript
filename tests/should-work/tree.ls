@@ -18,6 +18,7 @@ empty = Nil;
 
 test (Tree k v l r) = k;
 
+
 -- search for a key in a tree
 find :: Int -> Tree v -> Maybe v;
 find x (Nil)   = Nothing ;
@@ -30,8 +31,8 @@ find x (Tree k v l r)
 -- inserts a value into the tree
 insert :: (Int, v) -> Tree v -> Tree v;
 insert (k', v') (Tree k v l r)
-  | k' > k    = Tree k v l (insert (k', v'));
-  | k' < k    = Tree k v (insert (k', v') r);
+  | k' > k    = Tree k v l (insert (k', v') r);
+  | k' < k    = Tree k v (insert (k', v') l) r;
   | otherwise = Tree k v' l r;
 insert (k', v') (Nil)
               = Tree k' v' Nil Nil;
