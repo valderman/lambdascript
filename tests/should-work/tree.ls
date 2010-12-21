@@ -4,13 +4,6 @@ data Tree a
   | Tree Int, a, Tree a, Tree a
   ;
 
-data Maybe a = Nothing | Just a;
-
-data Bool = True | False;
-
-otherwise :: Bool;
-otherwise = True;
-
 -- an empty tree
 empty :: Tree a;
 empty = Nil;
