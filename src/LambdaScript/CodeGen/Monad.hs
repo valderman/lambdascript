@@ -18,13 +18,16 @@ data CGState = CGState {
 
 type CG = State CGState
 
--- | Create a blank starting state, using the given mapping of constructor IDs.
-blankState :: Map String ConstrID -> CGState
-blankState cs = CGState {
+-- | Create a blank starting state.
+blankState :: Map String ConstrID -- ^ Map of constructor names to IDs.
+           -> Map String Var      -- ^ Map of globals to IDs.
+           -> Var                 -- ^ The first var ID free for local use.
+           -> CGState
+blankState cs e firstLocal = CGState {
     code         = [],
-    env          = M.empty,
+    env          = e,
     constructors = cs,
-    nextID       = 0
+    nextID       = firstLocal
   }
 
 -- | Emit a statement.
@@ -77,10 +80,12 @@ isolate m = do
 -- | Generate code for a function, using the given generator.
 gen :: (Expr -> CG ())     -- ^ Generator to use for code generation.
     -> Map String ConstrID -- ^ Mapping of constructor names to IDs.
+    -> Map String Var      -- ^ The global environment.
+    -> Var                 -- ^ First var ID that's free for local use.
     -> ConstDef            -- ^ The definition to generate code for.
     -> Function            -- ^ The resulting Function.
-gen m cs (ConstDef (Abs.Ident id) ex) =
-  case runState (m ex) (blankState cs) of
+gen m cs env firstLocal (ConstDef (Abs.Ident id) ex) =
+  case runState (m ex) (blankState cs env firstLocal) of
     (_, st) -> Function {
         funName = id,
         mod     = "",

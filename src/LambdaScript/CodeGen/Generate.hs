@@ -25,10 +25,12 @@ generate p@(Program defs) =
           BGroup d -> bindgroup constrs d
           _        -> []
 
+-- globalIDs :: Program -> 
+
 -- | Generate code for all functions in a bind group.
 bindgroup :: M.Map String ConstrID -> BindGroup -> [Function]
 bindgroup constrs (BindGroup defs) =
-  map (gen function constrs) defs
+  map (gen function constrs M.empty 0) defs
 
 -- | Code generator for a single function.
 function :: Expr -> CG ()
