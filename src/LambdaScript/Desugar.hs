@@ -67,12 +67,23 @@ mergeCases :: [Expr] -> Expr
 mergeCases [soleCase] =
   soleCase
 mergeCases cases =
-  ECase (desuExpr expr) (foldr addCase [] cases)
+  case (foldr addCase [] cases) of
+    [] -> desuExpr expr
+    cs -> ECase (desuExpr expr) cs
   where
     expr =
-      case head cases of (ECase ex _) -> ex
+      -- If this isn't a case expression then we're dealing with multiple
+      -- definitions of the same constant, and this is the first definition.
+      -- The first definition overshadows later definitions, so we keep it.
+      case head cases of
+        (ECase ex _) -> ex
+        ex           -> ex
     addCase (ECase _ cps) a =
       cps ++ a
+    -- if this is something other than a case, we tried to merge two constant
+    -- definitions. perfectly legal, but we just drop it since the first one
+    -- overshadows later ones anyway.
+    addCase _ a = a
 
 -- | Turn a list of function definition patterns into a case expression with
 --   a tuple. For example:
