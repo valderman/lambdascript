@@ -6,10 +6,10 @@ import LambdaScript.Types
 assumptions :: [Assump]
 assumptions = map (\(id, t) -> id :>: quantify theVars t) defs
 
-functions :: [Def]
+functions :: Def
 functions =
-  flip map defs $ \(name, _) ->
-    Const $ ConstDef (Ident name) (EConstr $ TIdent "()")
+  BGroup $ BindGroup $ flip map defs $ \(name, _) ->
+    ConstDef (Ident name) (EConstr $ TIdent "()")
 
 theVars = map VIdent ["a"]
 

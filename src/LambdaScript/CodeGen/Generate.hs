@@ -31,7 +31,7 @@ generate p@(Program defs) =
     -- Assign IDs for every definition in every bind group.
     -- Also report the first free ID after assigning the globals.
     (env, firstLocal) =
-      case foldl' numberGroups ([], 0) (Builtin.functions ++ defs) of
+      case foldl' numberGroups ([], 0) (Builtin.functions : defs) of
         (e, fl) -> (M.fromList e, fl)
 
     -- Assign IDs to all definitions in a single bind group.
