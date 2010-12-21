@@ -63,4 +63,4 @@ strConst = StrConst
 newtype Var = Var {unV :: Int} deriving (Eq, Num, Show)
 
 -- | A constructor ID
-newtype ConstrID = ConstrID Int deriving (Eq, Num, Show)
+newtype ConstrID = ConstrID Int deriving (Eq, Num, Show, Enum)
