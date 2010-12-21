@@ -1,7 +1,7 @@
-map :: (a -> b) -> [a] -> [b]
+map :: (a -> b) -> [a] -> [b];
 map f (x:xs) = f x : map f xs;
 
-zip :: [a] -> [b] -> [(a, b)]
+zip :: [a] -> [b] -> [(a, b)];
 zip (x:xs) (y:ys) = (x, y) : zip xs ys;
 zip _ _           = [];
 
