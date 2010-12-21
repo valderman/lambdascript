@@ -15,7 +15,12 @@ showT (TApp (TCon (TIdent "*Num")) (TCon t)) =
   case t of
     TIdent "*RealInt" -> "Int"
     _                 -> "Double"
-showT (TOp t1 t2)   = showT t1 ++ " -> " ++ showT t2
+showT (TOp t1 t2)   =
+  case t1 of
+    TOp t1' t2' ->
+      "(" ++ showT t1 ++ ") -> " ++ showT t2
+    _ ->
+      showT t1 ++ " -> " ++ showT t2
 showT (TApp t1 t2)  = showT t1 ++ " (" ++ showT t2 ++ ")"
 showT (TTup (t:ts)) = "(" ++ foldl' (\a x -> a++","++showT x) (showT t) ts ++ ")"
 showT (TLst t)      = "[" ++ showT t ++ "]"
