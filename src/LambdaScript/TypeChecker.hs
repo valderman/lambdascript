@@ -143,7 +143,9 @@ tiBindGroup as (BindGroup defs) = do
     compareWithSigs id sc = do
       case find id as of
         Just sc' | sc' /= sc -> fail $ "Type signature of "
-                                     ++ id ++ " is too general!" 
+                                     ++ id ++ " is too general;\n"
+                                     ++ "inferred type is " ++ show sc ++ ";\n"
+                                     ++ "declared type is " ++ show sc'
         _                    -> return ()
 
 -- | Infer the type of an expression.
