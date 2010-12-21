@@ -22,18 +22,25 @@ tiDefs as defs =
             -- Ensure that, for type declarations, there exists an accompanying
             -- binding. We do it here rather than elsewhere because here we
             -- have the list of bindings handy.
+            -- Also make sure that no type is defined twice.
             case d of
               TypeDecl (VIdent id) t | not (id `elem` bindings) ->
                 fail $  "Type declaration " ++ id ++ " :: " ++ showT t
                      ++ " lacks accompanying binding."
+              TypeDef (NewType (TIdent id) _ _) | occursTwice id ->
+                fail $ "Type name clash: " ++ id
               _ -> return ()
             (as', d') <- tiDef a d
             return (as', d':ds))
         (as, [])
         defs
   where
+    occursTwice id =
+      id `elem` drop 1 (dropWhile (/= id) types)
     bindings =
       [id | BGroup (BindGroup ds) <- defs, ConstDef (Ident id) _ <- ds]
+    types =
+      [id | (TypeDef (NewType (TIdent id) _ _)) <- defs]
 
 -- | Infer the types of a definition, which at this point should be either a
 --   bind group, a type declaration or a type definition.
