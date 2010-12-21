@@ -1,5 +1,5 @@
 module LambdaScript.CodeGen.Generate (function, generate) where
-import LambdaScript.Abs
+import LambdaScript.Abs as A
 import LambdaScript.CodeGen.Monad
 import LambdaScript.CodeGen.Ops as Ops
 import LambdaScript.CodeGen.Errors
@@ -8,6 +8,7 @@ import LambdaScript.CodeGen.GenTypes
 import qualified Data.Map as M
 import Data.List (foldl1', foldl')
 import Control.Monad (foldM)
+import qualified LambdaScript.Builtins as Builtin
 
 -- | Generate code for all functions in a program.
 generate :: Program -> [Function]
@@ -15,22 +16,32 @@ generate p@(Program defs) =
   concat bgs
   where
     constrs =
-      allTypesMap p
+      allTypesMap $ Program (map TypeDef Builtin.types ++ defs)
     -- this is just syntactic acrobatics to make writing a map with a multiline
     -- lambda a little less painful by giving the list to map over before the
     -- function.
     bgs =
       flip map defs $
         \x -> case x of
-          BGroup d -> bindgroup constrs d
-          _        -> []
+          BGroup (BindGroup d) ->
+            map (gen function constrs env firstLocal) d
+          _        ->
+            []
 
--- globalIDs :: Program -> 
+    -- Assign IDs for every definition in every bind group.
+    -- Also report the first free ID after assigning the globals.
+    (env, firstLocal) =
+      case foldl' numberGroups ([], 0) (Builtin.functions ++ defs) of
+        (e, fl) -> (M.fromList e, fl)
 
--- | Generate code for all functions in a bind group.
-bindgroup :: M.Map String ConstrID -> BindGroup -> [Function]
-bindgroup constrs (BindGroup defs) =
-  map (gen function constrs M.empty 0) defs
+    -- Assign IDs to all definitions in a single bind group.
+    numberGroups acc (BGroup (BindGroup defs)) =
+      foldl'
+        (\(ids, n) (ConstDef (A.Ident id) _) ->
+          ((id, n):ids, n+1)
+        ) acc defs
+    numberGroups acc _ =
+      acc
 
 -- | Code generator for a single function.
 function :: Expr -> CG ()

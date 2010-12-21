@@ -5,7 +5,7 @@ import Data.Maybe
 import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
-import LambdaScript.TypeDefaults (assumptions)
+import LambdaScript.Builtins (assumptions)
 
 import LambdaScript.Print
 

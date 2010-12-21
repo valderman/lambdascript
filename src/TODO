@@ -1,4 +1,3 @@
-* Add functions and globals to code gen environment
 * Fix module system, which would consist of:
   + Add import directive to syntax
   + Whenever the type checker runs into an import, it should load and typecheck

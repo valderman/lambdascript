@@ -1,16 +1,29 @@
--- | Default type definitions and declarations for LS
-module LambdaScript.TypeDefaults (assumptions) where
-import Prelude hiding (maybe, either)
-import LambdaScript.Types
+-- | Definitions for all built-in types and functions.
+module LambdaScript.Builtins where
 import LambdaScript.Abs
+import LambdaScript.Types
 
 assumptions :: [Assump]
-assumptions = map (\(id, t) -> id :>: quantify theVars t) builtins
+assumptions = map (\(id, t) -> id :>: quantify theVars t) defs
+
+functions :: [Def]
+functions =
+  flip map defs $ \(name, _) ->
+    Const $ ConstDef (Ident name) (EConstr $ TIdent "()")
 
 theVars = map VIdent ["a"]
 
-builtins :: [(ID, Type)]
-builtins = [
-    ("()",    tUnit),
-    ("error", tString ~> tv "a")
+defs :: [(ID, Type)]
+defs = [
+    ("()",        tUnit),
+    ("error",     tString ~> tv "a"),
+    ("undefined", tv "a")
+  ]
+
+types :: [NewType]
+types = [
+    NewType (TIdent "Bool") [] [
+      Constructor (TIdent "True") [],
+      Constructor (TIdent "False") []
+    ]
   ]
