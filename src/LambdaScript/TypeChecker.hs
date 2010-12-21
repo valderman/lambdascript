@@ -96,6 +96,9 @@ addConstructors as td@(TypeDef (NewType id vars cons)) = do
   return (as', td)
   where
     addCon t as (Constructor (TIdent c) args) = do
+      case find c as of
+        Just _ -> fail $ "Constructor name clash: " ++ c
+        _      -> return ()
       let t' = mangle (foldr (~>) t (map (\(TypeEmpty t) -> t) args))
           vs = freeVars t'
           sc = quantify vs t'
