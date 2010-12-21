@@ -7,6 +7,22 @@ import LambdaScript.Abs
 
 type ID = String
 
+showSc :: Scheme -> String
+showSc (Forall _ t) = showT t
+
+showT :: Type -> String
+showT (TApp (TCon (TIdent "*Num")) (TCon t)) =
+  case t of
+    TIdent "*RealInt" -> "Int"
+    _                 -> "Double"
+showT (TOp t1 t2)   = showT t1 ++ " -> " ++ showT t2
+showT (TApp t1 t2)  = showT t1 ++ " (" ++ showT t2 ++ ")"
+showT (TTup (t:ts)) = "(" ++ foldl' (\a x -> a++","++showT x) (showT t) ts ++ ")"
+showT (TLst t)      = "[" ++ showT t ++ "]"
+showT (TGen n)      = "*" ++ show n
+showT (TCon (TIdent c)) = c
+showT (TVar (VIdent v)) = v
+
 -- | Make an identifier out of an int
 enumId :: Int -> ID
 enumId n = '*' : show n
@@ -120,7 +136,7 @@ bind :: Monad m => VIdent -> Type -> m Subst
 bind v t | t == TVar v =
   return nullSubst
          | v `elem` freeVars t =
-  fail $ "Occurs check fails: " ++ show v ++ " and " ++ show t
+  fail $ "Occurs check fails: " ++ showT (TVar v) ++ " and " ++ showT t
          | otherwise =
   return $ v +-> t
 
@@ -146,7 +162,7 @@ mgu t (TVar v) =
 mgu (TCon c1) (TCon c2) | c1 == c2 =
   return nullSubst
 mgu t1 t2 =
-  fail $ "Types don't unify: " ++ show t1 ++ " and " ++ show t2
+  fail $ "Types don't unify: " ++ showT t1 ++ " and " ++ showT t2
 
 -- | A type scheme consists of a number of type vars (the first constructor)
 --   and a type containing (at most) that many quantified type variables,

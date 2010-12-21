@@ -24,7 +24,7 @@ tiDefs as defs =
             -- have the list of bindings handy.
             case d of
               TypeDecl (VIdent id) t | not (id `elem` bindings) ->
-                fail $  "Type declaration " ++ id ++ " :: " ++ show t
+                fail $  "Type declaration " ++ id ++ " :: " ++ showT t
                      ++ " lacks accompanying binding."
               _ -> return ()
             (as', d') <- tiDef a d
@@ -144,8 +144,8 @@ tiBindGroup as (BindGroup defs) = do
       case find id as of
         Just sc' | sc' /= sc -> fail $ "Type signature of "
                                      ++ id ++ " is too general;\n"
-                                     ++ "inferred type is " ++ show sc ++ ";\n"
-                                     ++ "declared type is " ++ show sc'
+                                     ++ "inferred type is "++showSc sc++";\n"
+                                     ++ "declared type is "++showSc sc'
         _                    -> return ()
 
 -- | Infer the type of an expression.
