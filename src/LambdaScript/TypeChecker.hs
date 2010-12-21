@@ -168,7 +168,7 @@ tiExpr as (EList exs) = do
   v <- newTVar
   exs' <- mapM (\ex -> tiExpr as ex >>= return . snd) exs
   mapM_ (unify v) (map eUntyped exs')
-  return (as, eTyped (EList exs') v)
+  return (as, eTyped (EList exs') (list v))
 tiExpr as (ETuple exs) = do
   exs' <- mapM (\ex -> tiExpr as ex >>= return . snd) exs
   return (as, eTyped (ETuple exs') (tuple $ map eUntyped exs'))
