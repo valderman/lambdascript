@@ -27,7 +27,9 @@ tiDefs as defs =
               TypeDecl (VIdent id) t | not (id `elem` bindings) ->
                 fail $  "Type declaration " ++ id ++ " :: " ++ showT t
                      ++ " lacks accompanying binding."
-              TypeDef (NewType (TIdent id) _ _) | occursTwice id ->
+                                     | occursTwice id decls ->
+                fail $ "Declaring the type of " ++ id ++ " twice is illegal!"
+              TypeDef (NewType (TIdent id) _ _) | occursTwice id types ->
                 fail $ "Type name clash: " ++ id
               _ -> return ()
             (as', d') <- tiDef a d
@@ -35,8 +37,10 @@ tiDefs as defs =
         (as, [])
         defs
   where
-    occursTwice id =
-      id `elem` drop 1 (dropWhile (/= id) types)
+    occursTwice x xs =
+      x `elem` drop 1 (dropWhile (/= x) xs)
+    decls =
+      [id | TypeDecl (VIdent id) t <- defs]
     bindings =
       [id | BGroup (BindGroup ds) <- defs, ConstDef (Ident id) _ <- ds]
     types =
