@@ -17,7 +17,8 @@ defs :: [(ID, Type)]
 defs = [
     ("()",        tUnit),
     ("error",     tString ~> tv "a"),
-    ("undefined", tv "a")
+    ("undefined", tv "a"),
+    ("otherwise", tBool)
   ]
 
 types :: [NewType]
@@ -25,5 +26,9 @@ types = [
     NewType (TIdent "Bool") [] [
       Constructor (TIdent "True") [],
       Constructor (TIdent "False") []
+    ],
+    NewType (TIdent "Maybe") [AnyVar $ VIdent "a"] [
+      Constructor (TIdent "Just") [TypeEmpty $ tv "a"],
+      Constructor (TIdent "Nothing") []
     ]
   ]
