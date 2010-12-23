@@ -1,2 +1,2 @@
-data Foo = Foo (a Int);
+data Foo a = Foo (a Int);
 
