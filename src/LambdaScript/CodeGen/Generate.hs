@@ -251,11 +251,11 @@ genPList _ [] =
 --   result of the case expression will be placed.
 genCPs :: Exp -> Var -> [CasePattern] -> CG Stmt
 genCPs ex result (CPNoGuards p thenDo : ps) = do
-  cond <- genPat ex p
+  (cond, bind) <- isolate $ genPat ex p
   (thenEx, thenStmts) <- isolate $ genExpr thenDo
   elsePart <- genCPs ex result ps
   return $ If cond
-             (Block $ thenStmts ++ [Assign result thenEx])
+             (Block $ bind ++ thenStmts ++ [Assign result thenEx])
              (Just elsePart)
 genCPs ex result (CPGuards p cases : ps) = do
   error "fucking case patterns, how do they work"
