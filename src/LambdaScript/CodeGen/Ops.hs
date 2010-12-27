@@ -26,9 +26,11 @@ data Exp
 
 data Stmt
   = Assign Var Exp
-  | If     Exp Stmt (Maybe Stmt)
-  | Return Exp
-  | Block  [Stmt]
+  | If      Exp Stmt (Maybe Stmt)
+  | Return  Exp
+  | Block   [Stmt]
+  | Forever Stmt
+  | Break
   deriving Show
 
 -- | Operators

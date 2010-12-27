@@ -172,8 +172,8 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (ECase ex cps) = do
       ex' <- genExpr ex
       v <- newVar
-      genCPs ex' v cps >>= stmt
-      return $ Ops.Ident v
+      genCPs ex' v cps >>= stmt . Forever
+      return . thunk $ Ops.Ident v
 
     -- Bindings; we just generate them and assign them to local vars.
     -- Or at least we will when we get around to implementing them.
@@ -270,15 +270,56 @@ genCPs :: Exp -> Var -> [CasePattern] -> CG Stmt
 genCPs ex result (CPNoGuards p thenDo : ps) = do
   (cond, bind) <- isolate $ genPat ex p
   (thenEx, thenStmts) <- isolate $ genExpr thenDo
-  elsePart <- genCPs ex result ps
-  return $ If cond
-             (Block $ bind ++ thenStmts ++ [Assign result thenEx])
-             (Just elsePart)
+  (Block elsePart) <- genCPs ex result ps
+  -- We don't use the else part, because we need fall-through behaviour
+  -- when we introduce guards into the mix. For example:
+  -- foo (Just x) | x < 2 = bar
+  -- foo (Just 7)         = blah
+  -- The naive way to compile this would be something like
+  -- if isJust arg:
+  --   if x < 2:
+  --     bar
+  -- else if x == 7: 
+  --   blah
+  -- else:
+  --   error
+  -- However, if isJust arg and not x < 2, there's no way to reach x == 7.
+  -- Instead, we put everything inside a loop and then do:
+  -- if isJust arg:
+  --   if x < 2:
+  --     bar
+  --     break
+  -- if x == 7: 
+  --   blah
+  --   break
+  -- else:
+  --   error
+  -- ...which gives us the desired fall-through behaviour.
+  return . Block $ (If (eval cond)
+                       (Block $  bind
+                              ++ thenStmts
+                              ++ [Assign result thenEx, Break])
+                       Nothing) : elsePart
 genCPs ex result (CPGuards p cases : ps) = do
-  error "fucking case patterns, how do they work"
-  -- undefined
+  (cond, bind) <- isolate $ genPat ex p
+  gs <- mapM (genGuard result) cases
+  (Block elsePart) <- genCPs ex result ps
+  return . Block $ (If (eval cond)
+                       (Block $ bind ++ gs)
+                       Nothing) : elsePart
 genCPs ex result [] = do
-  return $ lsError "non-exhaustive pattern in function!"
+  return $ Block [lsError "non-exhaustive pattern in function!"]
+
+-- | Generate a guarded expression. Basically, if the guard holds we execute
+--   the associated expression and assign its return value to the result var,
+--   otherwise do nothing.
+genGuard :: Var -> GuardedCaseExpr -> CG Stmt
+genGuard v (GuardedCaseExpr (GuardExpr ge) ex) = do
+  guard <- genExpr ge
+  (expr, stmts) <- isolate $ genExpr ex
+  return $ If (eval guard)
+              (Block $ stmts ++ [Assign v expr, Break])
+              Nothing
 
 -- Placeholder for "gen function something something blah blah" 
 genDef = error "genDef: not implemented!"
