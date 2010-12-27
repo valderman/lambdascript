@@ -98,8 +98,13 @@ genExpr (ETyped ex t) = genExpr' t ex
     -- Various combinators for expressions; generate parts and thunk them.
     genExpr' t (EList (ex:exs)) = do
       ex' <- genExpr ex
-      exs' <- genExpr (EList exs)
+      -- The entire list has the same type; use genExpr' instead of genExpr
+      -- since EList exs is untyped and genExpr expects ETyped ...
+      exs' <- genExpr' t (EList exs)
       return . thunk $ Cons ex' exs'
+    genExpr' t (EList []) =
+      return . thunk . Ops.Const $ EmptyListConst
+
     genExpr' t (ETuple elems) = do
       elems' <- mapM genExpr elems
       return . thunk $ Array elems'
