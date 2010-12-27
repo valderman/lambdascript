@@ -173,6 +173,10 @@ genExpr (ETyped ex t) = genExpr' t ex
       mapM_ genDef defs
       genExpr ex
 
+-- We should never reach this definition; everything should be typed.
+genExpr ex =
+  error $ "Untyped expression: " ++ show ex
+
 -- | Patterns; generate an expression to check whether the pattern is matched
 --   or not, and variable bindings for each branch. The variable bindings are
 --   emitted as statements, as opposed to returned. Bindings are emitted as
