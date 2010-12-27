@@ -172,6 +172,10 @@ genExpr (ETyped ex t) = genExpr' t ex
       error "NO BINDINGS YET!"
       mapM_ genDef defs
       genExpr ex
+    
+    -- Catch-all for anything we might have forgotten to implement.
+    genExpr' t ex =
+      error $ "No codegen for expression:\n" ++ show ex
 
 -- We should never reach this definition; everything should be typed.
 genExpr ex =
