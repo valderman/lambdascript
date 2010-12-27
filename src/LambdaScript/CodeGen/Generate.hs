@@ -156,12 +156,16 @@ genExpr (ETyped ex t) = genExpr' t ex
             return vars
           return $ Lambda args (Block stmts)
 
-    -- If expression; basically a thunked a ? b : c;
+    -- If expression; if(a) {v = thenEx;} else {v = elseEx;}
     genExpr' t (EIf cond ifE elE) = do
+      v <- newVar
       cond' <- genExpr cond
-      ifE' <- genExpr ifE
-      elE' <- genExpr elE
-      return . thunk $ IfExp (eval cond') ifE' elE'
+      (ifE', ifS) <- isolate $ genExpr ifE
+      (elE', elS) <- isolate $ genExpr elE
+      stmt $ If (eval cond')
+                (Block $ ifS ++ [Assign v ifE'])
+                (Just . Block $ elS ++ [Assign v elE'])
+      return . thunk $ Ops.Ident v
 
     -- Case expression; works pretty much like a lambda with an arbitrary
     -- number of bodies. (See also: recursive documentation)
