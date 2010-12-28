@@ -22,7 +22,6 @@ data Exp
   | FunExp    Fun
   | IfExp     Exp Exp Exp -- ternary operator
   | Call      Exp [Exp]
-  deriving Show
 
 data Stmt
   = Assign Var Exp
@@ -31,21 +30,18 @@ data Stmt
   | Block   [Stmt]
   | Forever Stmt
   | Break
-  deriving Show
 
 -- | Operators
 data Oper
   = Add | Sub | Mul | Div | Mod
   | And | Or
   | Eq  | Lt  | Gt  | Le  | Ge | Ne
-  deriving Show
 
 -- | Functions
 data Fun
   = FunIdent String
   | Lambda    [Var] Stmt
   | Construct Type  ConstrID
-  deriving Show
 
 type NamedFunction = (String, [Var], Stmt)
 
@@ -56,13 +52,18 @@ data Const
   | StrConst  String
   | BoolConst Bool
   | EmptyListConst
-  deriving Show
 
 strConst :: String -> Const
 strConst = StrConst
 
 -- | Representation of a variable; basically just an ID.
-newtype Var = Var {unV :: Int} deriving (Eq, Num, Show)
+newtype Var = Var {unV :: Int} deriving (Eq, Num)
+
+instance Show Var where
+  show (Var n) = '_' : show n
 
 -- | A constructor ID
-newtype ConstrID = ConstrID Int deriving (Eq, Num, Show, Enum)
+newtype ConstrID = ConstrID Int deriving (Eq, Num, Enum)
+
+instance Show ConstrID where
+  show (ConstrID n) = show n
