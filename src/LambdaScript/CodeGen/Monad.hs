@@ -44,6 +44,10 @@ newVar = do
   put st {nextID = id + 1}
   return id
 
+-- | Create a variable identifier from a global name.
+namedGlobal :: String -> Var
+namedGlobal s = Global s
+
 -- | Bind the given identifier to the given ID.
 bind :: String -> Var -> CG ()
 bind id var = do

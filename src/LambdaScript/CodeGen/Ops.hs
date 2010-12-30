@@ -57,10 +57,21 @@ strConst :: String -> Const
 strConst = StrConst
 
 -- | Representation of a variable; basically just an ID.
-newtype Var = Var {unV :: Int} deriving (Eq, Num)
+data Var = Var Int | Global String
+  deriving Eq
 
 instance Show Var where
-  show (Var n) = '_' : show n
+  show (Var n)    = '_' : show n
+  show (Global s) = s
+
+instance Num Var where
+  (Var a) + (Var b) = Var (a+b)
+  (Var a) - (Var b) = Var (a-b)
+  (Var a) * (Var b) = Var (a*b)
+  abs (Var n)       = Var (abs n)
+  signum (Var n)    = Var (signum n)
+  fromInteger n     = Var $ fromInteger n
+
 
 -- | A constructor ID
 newtype ConstrID = ConstrID Int deriving (Eq, Num, Enum)
