@@ -47,11 +47,9 @@ generate p@(Program defs) =
 function :: Expr -> CG ()
 function ex = genExpr ex >>= stmt . Return
 
--- | Smack an Eval primitive on an expression, provided that said expression
---   actually is a thunk.
+-- | Smack an Eval primitive on an expression.
 eval :: Exp -> Exp
-eval ex@(Thunk _) = Eval ex
-eval ex           = ex
+eval ex = Eval ex
 
 -- | Turn an expression into a thunk, without double-thunking it.
 thunk :: Exp -> Exp
