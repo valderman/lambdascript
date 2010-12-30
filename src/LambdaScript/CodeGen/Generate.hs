@@ -63,7 +63,7 @@ oper :: Oper -> Expr -> Expr -> CG Exp
 oper op a b = do
   a' <- genExpr a
   b' <- genExpr b
-  return . thunk $ Oper op (eval a') (eval b')
+  return $ Oper op a' b'
 
 -- | Create a conjunction of a bunch of expressions.
 allTrue :: [Exp] -> Exp
@@ -72,11 +72,13 @@ allTrue = foldl1' (Oper And)
 genExpr :: Expr -> CG Exp
 genExpr (ETyped ex t) = genExpr' t ex
   where
-    -- Constructrors and vars; just look them up
+    -- Constructor; just look it up.
     genExpr' t (EConstr (TIdent id)) = do
       constrID id >>= return . FunExp . Construct t
+
+    -- A symbol; all symbols are thunks, so we must evaluate it.
     genExpr' t (EVar (VIdent id)) = do
-      idOf id >>= return . Ops.Ident
+      idOf id >>= return . eval . Ops.Ident
 
     -- Constants; nothing strange here
     genExpr' t (EInt n) = do
@@ -89,36 +91,39 @@ genExpr (ETyped ex t) = genExpr' t ex
       return . Ops.Const . strConst $ s
     
     -- Function application; generate code to obtain the function and to obtain
-    -- the argument, then eval function and apply without evaluating argument.
+    -- the argument, then apply the function to the thunked argument.
     genExpr' t (EApp f x) = do
       f' <- genExpr f
       x' <- genExpr x
-      return . thunk $ Call (eval f') [x']
+      return $ Call f' [thunk x']
 
-    -- Various combinators for expressions; generate parts and thunk them.
+    -- Various combinators for expressions.
     genExpr' t (EList (ex:exs)) = do
       ex' <- genExpr ex
       -- The entire list has the same type; use genExpr' instead of genExpr
       -- since EList exs is untyped and genExpr expects ETyped ...
       exs' <- genExpr' t (EList exs)
-      return . thunk $ Cons ex' exs'
+      -- Cons is a function application, so thunk the arguments.
+      return $ Cons (thunk ex') (thunk exs')
     genExpr' t (EList []) =
-      return . thunk . Ops.Const $ EmptyListConst
+      return . Ops.Const $ EmptyListConst
 
     genExpr' t (ETuple elems) = do
       elems' <- mapM genExpr elems
-      return . thunk $ Array elems'
+      return $ Array elems'
     genExpr' t (ECons x xs) = do
       x' <- genExpr x
       xs' <- genExpr xs
-      return . thunk $ Cons x' xs'
+      -- Again, Cons is a function so thunk the args.
+      return $ Cons (thunk x') (thunk xs')
     genExpr' t (ENot ex) = do
       ex' <- genExpr ex
-      return . thunk . Neg $ eval ex'
+      return $ Neg ex'
     genExpr' t (EConcat a b) = do
       a' <- genExpr a
       b' <- genExpr b
-      return . thunk $ Call (FunExp $ FunIdent "concat") [a', b']
+      -- ++ is also a function, so thunk the args.
+      return $ Call (FunExp $ FunIdent "concat") [thunk a', thunk b']
     
     -- Loooooong list of binary operators; boring!
     genExpr' t (EAnd a b) = oper And a b
@@ -138,7 +143,7 @@ genExpr (ETyped ex t) = genExpr' t ex
     -- Lambda expression; generate it much as we would a case expression with
     -- a single alternative.
     genExpr' t (ELambda ps ex) = do
-      return . thunk . FunExp =<< genLambda ps ex
+      return . FunExp =<< genLambda ps ex
       where
         genLambda ps ex = do
           (args, stmts) <- isolate $ do
@@ -162,10 +167,10 @@ genExpr (ETyped ex t) = genExpr' t ex
       cond' <- genExpr cond
       (ifE', ifS) <- isolate $ genExpr ifE
       (elE', elS) <- isolate $ genExpr elE
-      stmt $ If (eval cond')
+      stmt $ If cond'
                 (Block $ ifS ++ [Assign v ifE'])
                 (Just . Block $ elS ++ [Assign v elE'])
-      return . thunk $ Ops.Ident v
+      return $ Ops.Ident v
 
     -- Case expression; works pretty much like a lambda with an arbitrary
     -- number of bodies. (See also: recursive documentation)
@@ -173,7 +178,7 @@ genExpr (ETyped ex t) = genExpr' t ex
       ex' <- genExpr ex
       v <- newVar
       genCPs ex' v cps >>= stmt . Forever
-      return . thunk $ Ops.Ident v
+      return $ Ops.Ident v
 
     -- Bindings; we just generate them and assign them to local vars.
     -- Or at least we will when we get around to implementing them.
@@ -295,7 +300,7 @@ genCPs ex result (CPNoGuards p thenDo : ps) = do
   -- else:
   --   error
   -- ...which gives us the desired fall-through behaviour.
-  return . Block $ (If (eval cond)
+  return . Block $ (If cond
                        (Block $  bind
                               ++ thenStmts
                               ++ [Assign result thenEx, Break])
@@ -304,7 +309,7 @@ genCPs ex result (CPGuards p cases : ps) = do
   (cond, bind) <- isolate $ genPat ex p
   gs <- mapM (genGuard result) cases
   (Block elsePart) <- genCPs ex result ps
-  return . Block $ (If (eval cond)
+  return . Block $ (If cond
                        (Block $ bind ++ gs)
                        Nothing) : elsePart
 genCPs ex result [] = do
@@ -317,7 +322,7 @@ genGuard :: Var -> GuardedCaseExpr -> CG Stmt
 genGuard v (GuardedCaseExpr (GuardExpr ge) ex) = do
   guard <- genExpr ge
   (expr, stmts) <- isolate $ genExpr ex
-  return $ If (eval guard)
+  return $ If guard
               (Block $ stmts ++ [Assign v expr, Break])
               Nothing
 
