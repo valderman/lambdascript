@@ -8,7 +8,7 @@ instance Show Exp where
   show (Eval ex)      = show ex ++ "()"
   show (Tailcall ex)  = "_tc(" ++ show ex ++ ")"
   show (Index ex ix)  = show ex ++ "[" ++ show ix ++ "]"
-  show (Array exs)    = "{" ++ intercalate "," (map show exs) ++ "}"
+  show (Array exs)    = "[" ++ intercalate "," (map show exs) ++ "]"
   show (ConstrIs e c) = show e ++ "[0]" ++ " == " ++ show c
   show (Cons x xs)    = "_c(" ++ show x ++ ", " ++ show xs ++ ")"
   show (Const c)      = show c
