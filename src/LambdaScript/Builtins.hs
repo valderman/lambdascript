@@ -24,8 +24,8 @@ defs = [
 types :: [NewType]
 types = [
     NewType (TIdent "Bool") [] [
-      Constructor (TIdent "True") [],
-      Constructor (TIdent "False") []
+      Constructor (TIdent "False") [],
+      Constructor (TIdent "True") []
     ],
     NewType (TIdent "Maybe") [AnyVar $ VIdent "a"] [
       Constructor (TIdent "Just") [TypeEmpty $ tv "a"],
