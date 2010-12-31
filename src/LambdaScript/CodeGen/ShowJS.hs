@@ -5,7 +5,7 @@ import qualified LambdaScript.Abs as A
 import Data.List (intercalate)
 
 instance Show Exp where
-  show (Thunk ex)     = "function(){var x=arguments.callee;if(typeof x.x=='undefined') x.x=" ++ show ex ++ ";return x.x;}"
+  show (Thunk ex)     = "function _(){if(_u(_)) _.x=" ++ show ex ++ ";return _.x;}"
   show (Eval ex)      = show ex ++ "()"
   show (Tailcall ex)  = "_tc(" ++ show ex ++ ")"
   show (Index ex ix)  = show ex ++ "[" ++ show ix ++ "]"
