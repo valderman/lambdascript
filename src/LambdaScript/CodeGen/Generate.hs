@@ -105,7 +105,8 @@ genExpr (ETyped ex t) = genExpr' t ex
 
     genExpr' t (ETuple elems) = do
       elems' <- mapM genExpr elems
-      return $ Array elems'
+      -- A tuple is a constructor, so thunk the arguments!
+      return $ Array $ map thunk elems'
     genExpr' t (ECons x xs) = do
       x' <- genExpr x
       xs' <- genExpr xs
@@ -249,7 +250,7 @@ genPat ex (PCons hp tp) = do
 --   returned conditions. Bindings are emitted by genPat as usual.
 genPTuple :: Int -> Exp -> [PatC] -> CG Exp
 genPTuple n ex (PatC p : pats) = do
-  let x = Index ex (Ops.Const $ NumConst $ fromIntegral n)
+  let x = eval $ Index ex (Ops.Const $ NumConst $ fromIntegral n)
   x' <- genPat x p
   y <- genPTuple (n+1) ex pats
   return $ Oper And x' y
