@@ -4,12 +4,7 @@
     the module and put it into a list of modules to generate code for, unless
     the module was previously encountered.
   + Have codegen generate code for all modules in some arbitrary order
-* Intermediate -> JS generation
 * Fix codegen for local function definitions
-* Fix codegen for guarded patterns
 * Simplify boolean expressions
 * Basic function inlining
-* Ensure that laziness is implemented correctly (it probably isn't ATM, esp.
-  WRT case expressions)...
-* ...so that we can remove it where unnecessary (primitive strictness
-  analysis perhaps)
+* Remove laziness where it's unwanted. Or at least make an attempt.
