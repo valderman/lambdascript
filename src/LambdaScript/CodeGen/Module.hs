@@ -8,7 +8,13 @@ data Function = Function {
     funName :: String,
     mod     :: String,
     stmts   :: [Stmt]
-  } deriving Show
+  }
+
+instance Show Function where
+  show f =
+    "function " ++ funName f ++ "(){\n" ++
+    show (Block $ stmts f) ++
+    "}\n"
 
 -- | Data type representing a single module.
 data Module = Module {
