@@ -22,7 +22,7 @@ instance Show Exp where
                           ")"
 
 instance Show Stmt where
-  show (Assign v ex) = show v ++ " = " ++ show ex ++ ";\n"
+  show (Assign v ex) = "var " ++ show v ++ " = " ++ show ex ++ ";\n"
   show (If ex th el) = "if(" ++ show ex ++ ") " ++
                           show th ++ "\n" ++
                           case el of
