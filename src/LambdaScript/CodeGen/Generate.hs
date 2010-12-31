@@ -207,7 +207,12 @@ genPat ex (PTyped p _) = do
   genPat ex p
 genPat ex (PID (VIdent id)) = do
   v <- newVar
-  stmt $ Assign v $ thunk ex
+  -- Don't thunk the assignment if ex came from indexing an array; if it did,
+  -- the expression is a constructor field, which is guaranteed to already be
+  -- a thunk.
+  case ex of
+    Index _ _ -> stmt $ Assign v ex
+    _         -> stmt $ Assign v $ thunk ex
   bind id v
   return $ Ops.Const $ BoolConst True
 genPat ex (PInt n) = do
