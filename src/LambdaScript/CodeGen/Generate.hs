@@ -148,7 +148,7 @@ genExpr (ETyped ex t) = genExpr' t ex
             -- Create a var to refer to each argument
             vars <- mapM (\_ -> newVar) ps
             -- Generate pattern matching and binding code
-            (exps, binds) <- isolate $ sequence $ zipWith genPat (map Ops.Ident vars) ps
+            (exps, binds) <- isolate $ sequence $ zipWith genPat (map (eval . Ops.Ident) vars) ps
             -- Generate code for the lambda body
             (body, stmts) <- isolate $ genExpr ex
             -- If everything matches, we execute the body. Otherwise we
@@ -166,9 +166,9 @@ genExpr (ETyped ex t) = genExpr' t ex
       (ifE', ifS) <- isolate $ genExpr ifE
       (elE', elS) <- isolate $ genExpr elE
       stmt $ If cond'
-                (Block $ ifS ++ [Assign v ifE'])
-                (Just . Block $ elS ++ [Assign v elE'])
-      return $ Ops.Ident v
+                (Block $ ifS ++ [Assign v $ thunk ifE'])
+                (Just . Block $ elS ++ [Assign v $ thunk elE'])
+      return $ eval $ Ops.Ident v
 
     -- Case expression; works pretty much like a lambda with an arbitrary
     -- number of bodies. (See also: recursive documentation)
@@ -176,7 +176,7 @@ genExpr (ETyped ex t) = genExpr' t ex
       ex' <- genExpr ex
       v <- newVar
       genCPs ex' v cps >>= stmt . Forever
-      return $ Ops.Ident v
+      return $ eval $ Ops.Ident v
 
     -- Bindings; we just generate them and assign them to local vars.
     -- Or at least we will when we get around to implementing them.
@@ -206,7 +206,7 @@ genPat ex (PTyped p _) = do
   genPat ex p
 genPat ex (PID (VIdent id)) = do
   v <- newVar
-  stmt $ Assign v $ ex
+  stmt $ Assign v $ thunk ex
   bind id v
   return $ Ops.Const $ BoolConst True
 genPat ex (PInt n) = do
@@ -301,7 +301,7 @@ genCPs ex result (CPNoGuards p thenDo : ps) = do
   return . Block $ (If cond
                        (Block $  bind
                               ++ thenStmts
-                              ++ [Assign result thenEx, Break])
+                              ++ [Assign result $ thunk thenEx, Break])
                        Nothing) : elsePart
 genCPs ex result (CPGuards p cases : ps) = do
   (cond, bind) <- isolate $ genPat ex p
@@ -321,7 +321,7 @@ genGuard v (GuardedCaseExpr (GuardExpr ge) ex) = do
   guard <- genExpr ge
   (expr, stmts) <- isolate $ genExpr ex
   return $ If guard
-              (Block $ stmts ++ [Assign v expr, Break])
+              (Block $ stmts ++ [Assign v $ thunk expr, Break])
               Nothing
 
 -- Placeholder for "gen function something something blah blah" 
