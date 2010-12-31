@@ -53,6 +53,7 @@ eval ex = Eval ex
 
 -- | Turn an expression into a thunk, without double-thunking it.
 thunk :: Exp -> Exp
+thunk (Eval ex)    = ex
 thunk ex@(Thunk _) = ex
 thunk ex           = Thunk ex
 
