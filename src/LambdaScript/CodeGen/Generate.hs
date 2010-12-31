@@ -24,24 +24,20 @@ generate p@(Program defs) =
       flip map defs $
         \x -> case x of
           BGroup (BindGroup d) ->
-            map (gen function constrs env firstLocal) d
+            map (gen function constrs env 0) d
           _        ->
             []
 
     -- Assign IDs for every definition in every bind group.
-    -- Also report the first free ID after assigning the globals.
-    (env, firstLocal) =
-      case foldl' numberGroups ([], 0) (Builtin.functions : defs) of
-        (e, fl) -> (M.fromList e, fl)
+    env =
+      case concat $ map numberGroups (Builtin.functions : defs) of
+        e -> M.fromList e
 
     -- Assign IDs to all definitions in a single bind group.
-    numberGroups acc (BGroup (BindGroup defs)) =
-      foldl'
-        (\(ids, n) (ConstDef (A.Ident id) _) ->
-          ((id, n):ids, n+1)
-        ) acc defs
-    numberGroups acc _ =
-      acc
+    numberGroups (BGroup (BindGroup defs)) =
+      map (\(ConstDef (A.Ident id) _) -> (id, Global id)) defs
+    numberGroups _ =
+      []
 
 -- | Code generator for a single function.
 function :: Expr -> CG ()
