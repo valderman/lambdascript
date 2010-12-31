@@ -1,6 +1,7 @@
 -- | Turns LS intermediate representation into JS.
 module LambdaScript.CodeGen.ShowJS where
 import LambdaScript.CodeGen.Ops
+import qualified LambdaScript.Abs as A
 import Data.List (intercalate)
 
 instance Show Exp where
@@ -51,7 +52,10 @@ instance Show Fun where
   show (FunIdent str)   = str
   show (Lambda as st)   = "function(" ++ intercalate "," (map show as) ++
                           ")" ++ show st ++ "\n"
-  show (Construct _ id) = show id
+  show (Construct t id) = "_C(" ++ show (numArgs t) ++ "," ++ show id ++ ")"
+    where
+      numArgs (A.TOp _ t) = numArgs t + 1
+      numArgs _           = 0
 
 instance Show Const where
   show (NumConst d)      = show d
