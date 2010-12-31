@@ -233,11 +233,14 @@ genPat ex (PConstr (TIdent id) args) = do
 genPat _ PWildcard = do
   return $ Ops.Const $ BoolConst True
 genPat ex (PCons hp tp) = do
-  let h = Index ex $ Ops.Const $ NumConst 0
-  let t = Index ex $ Ops.Const $ NumConst 1  
+  let isCons = Index ex $ Ops.Const $ NumConst 0
+  let h = Index ex $ Ops.Const $ NumConst 1
+  let t = Index ex $ Ops.Const $ NumConst 2  
   h' <- genPat h hp
   t' <- genPat t tp
-  return $ Oper And h' t'
+  -- This relies on [a] being defined as data [a] = [] | a : [a]
+  -- That is, [] has ID 0 and : has ID 1.
+  return $ Oper And isCons (Oper And h' t')
 
 -- | Generate code for a tuple pattern match. Tuples are represented as JS
 --   arrays, so to generate code to match them we just recurse through the
@@ -258,13 +261,17 @@ genPTuple _ _ [] =
 --   them together.
 genPList :: Exp -> [PatC] -> CG Exp
 genPList ex (PatC p : pats) = do  
-  let h = Index ex $ Ops.Const $ NumConst 0
-  let t = Index ex $ Ops.Const $ NumConst 1
+  let isCons = Index ex $ Ops.Const $ NumConst 0
+  let h = Index ex $ Ops.Const $ NumConst 1
+  let t = Index ex $ Ops.Const $ NumConst 2  
   h' <- genPat h p
   t' <- genPList t pats
-  return $ Oper And h' t'
-genPList _ [] =
-  return $ Ops.Const $ BoolConst True
+  -- This relies on [a] being defined as data [a] = [] | a : [a]
+  -- That is, [] has ID 0 and : has ID 1.
+  return $ Oper And isCons (Oper And h' t')
+genPList ex [] =
+  -- ...as does this.
+  return $ Ops.Neg (Index ex $ Ops.Const $ NumConst 0)
 
 -- | Generate a set of case patterns. A case pattern is a pattern of the form
 --   pattern [| guard] -> expression. The given Exp gives the variable that is

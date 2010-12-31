@@ -11,7 +11,7 @@ instance Show Exp where
   show (Index ex ix)  = show ex ++ "[" ++ show ix ++ "]"
   show (Array exs)    = "[" ++ intercalate "," (map show exs) ++ "]"
   show (ConstrIs e c) = show e ++ "[0]" ++ " == " ++ show c
-  show (Cons x xs)    = "_c(" ++ show x ++ ", " ++ show xs ++ ")"
+  show (Cons x xs)    = "[1," ++ show x ++ "," ++ show xs ++ "]"
   show (Const c)      = show c
   show (Ident v)      = show v
   show (Oper o e1 e2) = "(" ++ show e1 ++ ")" ++ show o ++ "(" ++ show e2 ++ ")"
@@ -63,4 +63,4 @@ instance Show Const where
   show (StrConst s)      = show s
   show (BoolConst True)  = "1"
   show (BoolConst False) = "0"
-  show (EmptyListConst)  = "_nil"
+  show (EmptyListConst)  = "[0]"
