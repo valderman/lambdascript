@@ -1,16 +1,14 @@
 module Main where
 import System.Environment (getArgs)
 import qualified Data.Map as M
-import LambdaScript.Desugar
-import LambdaScript.Depends
-import LambdaScript.Par
-import LambdaScript.Lex
-import LambdaScript.Abs
-import LambdaScript.Print
+import LambdaScript.Desugar (desugar)
+import LambdaScript.Depends (bindGroups)
+import LambdaScript.Par (pProgram)
+import LambdaScript.Lex (tokens)
+import LambdaScript.Abs (Program)
 import LambdaScript.ErrM
-import LambdaScript.TypeChecker
-import LambdaScript.CodeGen.Generate
-import Control.DeepSeq
+import LambdaScript.TypeChecker (infer)
+import LambdaScript.CodeGen.Generate (generate)
 
 main :: IO ()
 main = do
