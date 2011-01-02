@@ -21,7 +21,11 @@ main = do
   -- instances for the intermediate code types.
   case generate p of
     p' | length p' /= -1 -> do
-      let jsfile = reverse $ 's':'j':dropWhile (/= '.') (reverse fp)
+      let jsfile = reverse
+                 . ("sj" ++) 
+                 . takeWhile (/= '/')
+                 . dropWhile (/= '.')
+                 $ (reverse fp)
       runtime <- readFile "lib/runtime.js"
       let rt = unlines [x | x <- lines runtime, not (null x) && take 2 x /= "//"]
       writeFile jsfile $ rt ++ show p'
