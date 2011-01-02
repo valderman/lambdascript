@@ -37,7 +37,7 @@ test_all() {
 		    let goodpassed=$goodpassed+1
 		else
 		    echo "Wrong result: $f"
-		    echo "  (expected $oracle, got $result)"
+		    echo "  (expected '$oracle', got '$result')"
 		    echo "$f" >> failed-good
 		fi
 	    else
