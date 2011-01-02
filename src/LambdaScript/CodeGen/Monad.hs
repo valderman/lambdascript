@@ -76,7 +76,7 @@ constrID s = do
 isolate :: CG a -> CG (a, [Stmt])
 isolate m = do
   st <- get
-  case runState m st of
+  case runState m st {code = []} of
     (a, st') -> do
       put st' {code = code st}
       return (a, reverse $ code st')
