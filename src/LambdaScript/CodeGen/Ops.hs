@@ -20,7 +20,6 @@ data Exp
   | Oper      Oper Exp Exp
   | Neg       Exp
   | FunExp    Fun
-  | IfExp     Exp Exp Exp -- ternary operator
   | Call      Exp [Exp]
 
 data Stmt
