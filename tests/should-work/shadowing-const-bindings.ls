@@ -2,3 +2,5 @@
 -- legal.
 f = True;
 f = False;
+
+main = f;

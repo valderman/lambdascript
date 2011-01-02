@@ -9,9 +9,6 @@ empty :: Tree a;
 empty = Nil;
 
 
-test (Tree k v l r) = k;
-
-
 -- search for a key in a tree
 find :: Int -> Tree v -> Maybe v;
 find x (Nil)   = Nothing ;
@@ -30,3 +27,16 @@ insert (k', v') (Tree k v l r)
 insert (k', v') (Nil)
               = Tree k' v' Nil Nil;
 
+t = insert (10, 10) (insert (5, 5) (insert (15, 15) (insert (25, 25) (insert (3, 3) empty))));
+
+main =
+  case find 15 t of
+    (Just n) -> case find 3 t of
+                  (Just n') -> case find 26 t of
+                                 (Just _)  -> error "Nonexistent element 26 found!";
+                                 (Nothing) -> n+n';
+                               ;
+                  _         -> error "Element 3 not found!";
+                ;
+    _        -> error "Element 15 not found!";
+  ;

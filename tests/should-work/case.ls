@@ -12,3 +12,5 @@ showSomeType t =
     (C)   -> "C";
     (D n) -> if n < 0 then "D negative" else "D positive";
   ;
+
+main = showSomeType A ++ showSomeType (D 10);
