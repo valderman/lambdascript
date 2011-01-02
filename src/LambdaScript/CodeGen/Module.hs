@@ -15,6 +15,10 @@ instance Show Function where
     "function " ++ funName f ++ "(){\n" ++
     show (Block $ stmts f) ++
     "}\n"
+  showList (f:fs) =
+    \x -> showList fs (show f) ++ x
+  showList _ =
+    id
 
 -- | Data type representing a single module.
 data Module = Module {
