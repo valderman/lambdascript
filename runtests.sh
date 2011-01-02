@@ -26,9 +26,26 @@ test_all() {
     for f in tests/should-work/*; do
 	let goodtotal=$goodtotal+1
 	if ./lsc "$f" > /dev/null 2> /dev/null ; then
-            let goodpassed=$goodpassed+1
+	    # blah.ls -> blah.js
+	    jsfile=$(basename $(echo $f | sed -e 's/\(\\*\).ls$/\1.js/'))
+	    echo "print(main());" >> $jsfile
+
+	    if [ -e tests/oracles/$jsfile ] ; then
+		oracle=$(cat tests/oracles/$jsfile)
+		result=$(js $jsfile)
+		if [ "$oracle" == "$result" ] ; then
+		    let goodpassed=$goodpassed+1
+		else
+		    echo "Wrong result: $f"
+		    echo "  (expected $oracle, got $result)"
+		    echo "$f" >> failed-good
+		fi
+	    else
+		echo "No oracle for $f"
+		echo "$f" >> failed-good
+	    fi
 	else
-            echo "FAILED: $f"
+            echo "Failed to compile: $f"
 	    echo "$f" >> failed-good
 	fi
     done
