@@ -179,9 +179,15 @@ genExpr (ETyped ex t) = genExpr' t ex
     -- Bindings; we just generate them and assign them to local vars.
     -- Or at least we will when we get around to implementing them.
     genExpr' t (EBinds ex defs) = do
-      error "NO BINDINGS YET!"
-      mapM_ genDef defs
+      sequence_ [genDef id ex | BGroup (BindGroup group) <- defs,
+                                ConstDef (A.Ident id) ex <- group]
       genExpr ex
+      where
+        genDef id ex = do
+          v <- newVar
+          bind id v
+          ((), stmts) <- isolate $ function ex
+          stmt $ Assign v (FunExp $ Lambda [] (Block stmts))
     
     -- Catch-all for anything we might have forgotten to implement.
     genExpr' t ex =
@@ -333,6 +339,3 @@ genGuard v (GuardedCaseExpr (GuardExpr ge) ex) = do
   return $ If guard
               (Block $ stmts ++ [Assign v $ thunk expr, Break])
               Nothing
-
--- Placeholder for "gen function something something blah blah" 
-genDef = error "genDef: not implemented!"
