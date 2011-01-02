@@ -177,15 +177,17 @@ genExpr (ETyped ex t) = genExpr' t ex
       return $ eval $ Ops.Ident v
 
     -- Bindings; we just generate them and assign them to local vars.
-    -- Or at least we will when we get around to implementing them.
     genExpr' t (EBinds ex defs) = do
-      sequence_ [genDef id ex | BGroup (BindGroup group) <- defs,
-                                ConstDef (A.Ident id) ex <- group]
+      -- Generate vars to bind each function to
+      binds <- sequence [newVar >>= \v -> bind id v >> return (v, id, ex)
+                        | BGroup (BindGroup group) <- defs,
+                          ConstDef (A.Ident id) ex <- group]
+      -- Generate code for each function
+      mapM_ genDef binds
+      -- Finally generate code for the expression.
       genExpr ex
       where
-        genDef id ex = do
-          v <- newVar
-          bind id v
+        genDef (v, id, ex) = do
           ((), stmts) <- isolate $ function ex
           stmt $ Assign v (FunExp $ Lambda [] (Block stmts))
     
