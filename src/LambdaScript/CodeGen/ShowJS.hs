@@ -62,7 +62,9 @@ instance Show Fun where
   show x                = error $ "No Show instance for " ++ show x ++ "!"
 
 instance Show Const where
-  show (NumConst d)      = show d
+  show (NumConst d)      = if snd (properFraction d) /= 0
+                              then show d
+                              else show (truncate d)
   show (CharConst c)     = ['\'', c, '\'']
   show (StrConst s)      = show s
   show (BoolConst True)  = "1"
