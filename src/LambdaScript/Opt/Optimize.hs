@@ -4,10 +4,13 @@ import Data.List (foldl')
 import LambdaScript.CodeGen.Module
 import LambdaScript.Opt.Core
 import LambdaScript.Opt.BooleanSimplifier
+import LambdaScript.Opt.NoZeroCompares
 
--- | The list of optimizations to apply to the list of functions.
+-- | The list of optimizations to apply to the list of functions. Optimizations
+--   are applied from left to right.
 opts :: [Opt]
 opts = [
+    noZeroCompares,
     booleanSimplify
   ]
 
