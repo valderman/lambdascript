@@ -20,6 +20,7 @@ instance Show Exp where
   show (Call f args)  = show f ++ "(" ++
                           intercalate "," (map show args) ++
                           ")"
+  show x              = error $ "No Show instance for " ++ show x ++ "!"
 
 instance Show Stmt where
   show (Assign v ex) = "var " ++ show v ++ " = " ++ show ex ++ ";\n"
@@ -32,6 +33,7 @@ instance Show Stmt where
   show (Block stmts) = "{\n" ++ concat (map show stmts) ++ "}"
   show (Forever st)  = "for(;;) " ++ show st
   show (Break)       = "break;\n"
+  show x             = error $ "No Show instance for " ++ show x ++ "!"
 
 instance Show Oper where
   show Add = "+"
@@ -47,6 +49,7 @@ instance Show Oper where
   show Le  = "<="
   show Ge  = ">="
   show Ne  = "!="
+  show x   = error $ "No Show instance for " ++ show x ++ "!"
 
 instance Show Fun where
   show (FunIdent str)   = str
@@ -56,6 +59,7 @@ instance Show Fun where
     where
       numArgs (A.TOp _ t) = numArgs t + 1
       numArgs _           = 0
+  show x                = error $ "No Show instance for " ++ show x ++ "!"
 
 instance Show Const where
   show (NumConst d)      = show d
@@ -64,3 +68,4 @@ instance Show Const where
   show (BoolConst True)  = "1"
   show (BoolConst False) = "0"
   show (EmptyListConst)  = "[0]"
+  show x                 = error $ "No Show instance for " ++ show x ++ "!"
