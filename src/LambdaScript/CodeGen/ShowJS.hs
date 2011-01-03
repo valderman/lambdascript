@@ -68,7 +68,7 @@ instance Show Const where
                               then show d
                               else show (truncate d)
   show (CharConst c)     = ['\'', c, '\'']
-  show (StrConst s)      = show s
+  show (StrConst s)      = "_s(" ++ show s ++ ")"
   show (BoolConst True)  = "1"
   show (BoolConst False) = "0"
   show (EmptyListConst)  = "[0]"
