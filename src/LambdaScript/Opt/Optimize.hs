@@ -6,6 +6,7 @@ import LambdaScript.Opt.Core
 import LambdaScript.Opt.BooleanSimplifier
 import LambdaScript.Opt.NoZeroCompares
 import LambdaScript.Opt.NoObviousIfs
+import LambdaScript.Opt.ZapArrays
 import LambdaScript.Opt.ReduceBlocks
 import LambdaScript.Opt.NoUselessAssigns
 
@@ -16,6 +17,7 @@ opts = [
     noZeroCompares,
     booleanSimplify,
     noObviousIfs,
+    zapArrays,
     reduceBlocks,
     noUselessAssigns
   ]
