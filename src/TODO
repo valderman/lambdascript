@@ -4,6 +4,5 @@
     the module and put it into a list of modules to generate code for, unless
     the module was previously encountered.
   + Have codegen generate code for all modules in some arbitrary order
-* Simplify boolean expressions
 * Basic function inlining
 * Remove laziness where it's unwanted. Or at least make an attempt.

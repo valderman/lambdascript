@@ -9,6 +9,7 @@ import LambdaScript.Abs (Program)
 import LambdaScript.ErrM
 import LambdaScript.TypeChecker (infer)
 import LambdaScript.CodeGen.Generate (generate)
+import LambdaScript.Opt.Optimize (applyOpts)
 
 main :: IO ()
 main = do
@@ -26,7 +27,8 @@ main = do
                  $ (reverse fp)
       runtime <- readFile "lib/runtime.js"
       let rt = unlines [x | x <- lines runtime, not (null x) && take 2 x /= "//"]
-      writeFile jsfile $ rt ++ show p'
+      let p'' = applyOpts p'
+      writeFile jsfile $ rt ++ show p''
 
 -- | Parse and type check a program.
 parseAndCheck :: FilePath -> IO Program
