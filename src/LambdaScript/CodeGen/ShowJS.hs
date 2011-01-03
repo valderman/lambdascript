@@ -20,6 +20,7 @@ instance Show Exp where
   show (Call f args)  = show f ++ "(" ++
                           intercalate "," (map show args) ++
                           ")"
+  show (NoExp)        = ""
   show x              = error $ "No Show instance for " ++ show x ++ "!"
 
 instance Show Stmt where
@@ -33,6 +34,7 @@ instance Show Stmt where
   show (Block stmts) = "{\n" ++ concat (map show stmts) ++ "}"
   show (Forever st)  = "for(;;) " ++ show st
   show (Break)       = "break;\n"
+  show (NoStmt)      = ""
   show x             = error $ "No Show instance for " ++ show x ++ "!"
 
 instance Show Oper where

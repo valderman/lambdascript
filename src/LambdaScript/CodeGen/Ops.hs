@@ -21,6 +21,7 @@ data Exp
   | Neg       Exp
   | FunExp    Fun
   | Call      Exp [Exp]
+  | NoExp
 
 data Stmt
   = Assign Var Exp
@@ -29,6 +30,7 @@ data Stmt
   | Block   [Stmt]
   | Forever Stmt
   | Break
+  | NoStmt
 
 -- | Operators
 data Oper
