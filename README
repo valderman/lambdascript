@@ -1,3 +1,5 @@
+** About
+
 Lambdascript is a prototype language for strongly typed, lazy, purely
 functional client side web scripting. It provides a basic subset of
 Haskell's functionality, compiled into Javascript.
@@ -8,6 +10,12 @@ saner tools (BNFC is somewhat suboptimal for anything that's supposed to
 actually be of any use) to enable some essential features (read: polymorphism)
 and nicer syntax.
 
+
+** Building & dependencies
+
+To build the Lambdascript compiler (lsc,) simply run 'make' in the project's
+root directory.
+
 In order to compile LS, you need bnfc (get it from
 http://code.haskell.org/bnfc/ or through your system's package manager if
 you're on Debian or any of its derivatives.)
@@ -15,3 +23,29 @@ you're on Debian or any of its derivatives.)
 In order to run the test suite, you need spidermonkey installed. That's also
 handily available from your package manager if you're on Debian with
 derivatives.
+
+
+** Compiling & running programs
+
+To compile a Lambdascript program into Javascript, run the compiler (lsc) in
+the root directory of the project with the input file as its only argument:
+$ ./lsc some/lambdascript/input/file.ls
+The corresponding output file, for this example file.js, will be created in
+your working directory.
+
+At the moment, running lsc from another directory is not possible, the reason
+being that lsc looks for the LS runtime library in lib/runtime.js.
+
+To run your newly compiled program, include it in an HTML document using the
+<script> tag and call its functions from another <script> tag. At the moment,
+certain special care must be taken with the parameters.
+
+Let's assume you have the LS function foo :: Int -> Int -> Int. You would call
+it from JS as follows:
+foo()(1)(2);
+The identifier foo is a thunk; a suspended computation. To actually perform
+that computation and get its value (in this case the foo function) we must
+evaluate it, which is done by calling it as a nullary function.
+When we evaluate it, we get back a lambda expression like \x -> \y -> ...
+which should explain why we call it not as a binary function but as a
+function returning another function; because that's what it is.
