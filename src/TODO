@@ -1,3 +1,5 @@
+* We can't have monads in general since we don't have type classes, but can we
+  have just a specific IO monad and perhaps some syntactic sugar? YES WE CAN!
 * Fix module system, which would consist of:
   + Add import directive to syntax
   + Whenever the type checker runs into an import, it should load and typecheck
