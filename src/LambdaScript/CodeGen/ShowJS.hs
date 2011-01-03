@@ -15,7 +15,7 @@ instance Show Exp where
   show (Const c)      = show c
   show (Ident v)      = show v
   show (Oper o e1 e2) = "(" ++ show e1 ++ ")" ++ show o ++ "(" ++ show e2 ++ ")"
-  show (Neg ex)       = "!" ++ show ex
+  show (Neg ex)       = "!(" ++ show ex ++ ")"
   show (FunExp f)     = show f
   show (Call f args)  = show f ++ "(" ++
                           intercalate "," (map show args) ++
