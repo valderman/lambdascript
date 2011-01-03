@@ -5,13 +5,15 @@ import LambdaScript.CodeGen.Module
 import LambdaScript.Opt.Core
 import LambdaScript.Opt.BooleanSimplifier
 import LambdaScript.Opt.NoZeroCompares
+import LambdaScript.Opt.NoObviousIfs
 
 -- | The list of optimizations to apply to the list of functions. Optimizations
 --   are applied from left to right.
 opts :: [Opt]
 opts = [
     noZeroCompares,
-    booleanSimplify
+    booleanSimplify,
+    noObviousIfs
   ]
 
 -- | Apply optimizations to the functions.
