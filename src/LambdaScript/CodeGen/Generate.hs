@@ -235,7 +235,7 @@ genPat ex (PTuple pats) = do
 genPat ex (PConstr (TIdent id) args) = do
   cid <- constrID id
   (_, cond) <- foldM (\(n, cond) p -> do
-                         c <- genPat (Index ex $ Ops.Const $ NumConst n) p
+                         c <- genPat (eval $ Index ex $ Ops.Const $ NumConst n) p
                          return (n+1, Oper And cond c))
                      (1, (ex `ConstrIs` cid))
                      args
