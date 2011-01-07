@@ -31,7 +31,10 @@ data Exp
 data Stmt
   = Assign Var Exp
   | If      Exp Stmt (Maybe Stmt)
-  | Return  Exp
+    -- The first argument of the return primitive is the arity of the returned
+    -- expression. The optimizer needs this information to inline stuff like
+    -- mapFOver = map f
+  | Return  Int Exp
   | Block   [Stmt]
   | Forever Stmt
   | Break

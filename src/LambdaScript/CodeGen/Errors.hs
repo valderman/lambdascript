@@ -2,7 +2,7 @@ module LambdaScript.CodeGen.Errors where
 import LambdaScript.CodeGen.Ops
 
 lsError :: String -> Stmt
-lsError msg = Return
+lsError msg = Return 0
             $ Call 1 (Eval $ FunExp (FunIdent "error")) [Thunk $ Const $ strConst msg]
 
 lambdaPatternMismatch =

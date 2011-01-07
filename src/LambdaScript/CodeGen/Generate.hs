@@ -41,7 +41,7 @@ generate p@(Program defs) =
 
 -- | Code generator for a single function.
 function :: Expr -> CG ()
-function ex = genExpr ex >>= stmt . Return
+function ex = genExpr ex >>= stmt . Return (nargs ex)
 
 -- | Smack an Eval primitive on an expression.
 eval :: Exp -> Exp
@@ -160,7 +160,7 @@ genExpr (ETyped ex t) = genExpr' t ex
             -- If everything matches, we execute the body. Otherwise we
             -- runtimefail.
             stmt $ If (allTrue exps)
-                      (Block $ binds ++ stmts ++ [Return body])
+                      (Block $ binds ++ stmts ++ [Return (nargs ex) body])
                       (Just lambdaPatternMismatch)
             return vars
           return $ Lambda args (Block stmts)

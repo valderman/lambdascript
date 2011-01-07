@@ -30,7 +30,7 @@ instance Show Stmt where
                           case el of
                             Just ex -> "else " ++ show ex ++ "\n"
                             _       -> ""
-  show (Return ex)   = "return " ++ show ex ++ ";\n"
+  show (Return _ ex) = "return " ++ show ex ++ ";\n"
   show (Block stmts) = "{\n" ++ concat (map show stmts) ++ "}"
   show (Forever st)  = "for(;;) " ++ show st
   show (Break)       = "break;\n"

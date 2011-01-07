@@ -47,8 +47,8 @@ optS o (If e s ms) =
       Just s -> Just $ optS o s
       _      -> Nothing
       
-optS o (Return e) =
-  optStm o $ Return (optE o e)
+optS o (Return n e) =
+  optStm o $ Return n (optE o e)
   
 optS o (Block ss) =
   optStm o $ Block (map (optS o) ss)
