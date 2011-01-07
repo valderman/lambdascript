@@ -272,8 +272,8 @@ genPTuple _ _ [] =
 genPList :: Exp -> [PatC] -> CG Exp
 genPList ex (PatC p : pats) = do  
   let isCons = Index ex $ Ops.Const $ NumConst 0
-  let h = Index ex $ Ops.Const $ NumConst 1
-  let t = Index ex $ Ops.Const $ NumConst 2  
+  let h = eval $ Index ex $ Ops.Const $ NumConst 1
+  let t = eval $ Index ex $ Ops.Const $ NumConst 2  
   h' <- genPat h p
   t' <- genPList t pats
   -- This relies on [a] being defined as data [a] = [] | a : [a]
