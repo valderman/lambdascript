@@ -244,8 +244,8 @@ genPat _ PWildcard = do
   return $ Ops.Const $ BoolConst True
 genPat ex (PCons hp tp) = do
   let isCons = Index ex $ Ops.Const $ NumConst 0
-  let h = Index ex $ Ops.Const $ NumConst 1
-  let t = Index ex $ Ops.Const $ NumConst 2  
+  let h = eval $ Index ex $ Ops.Const $ NumConst 1
+  let t = eval $ Index ex $ Ops.Const $ NumConst 2
   h' <- genPat h hp
   t' <- genPat t tp
   -- This relies on [a] being defined as data [a] = [] | a : [a]
