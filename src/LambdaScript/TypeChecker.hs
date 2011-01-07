@@ -6,14 +6,15 @@ import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
 import LambdaScript.Builtins (assumptions, types)
+import LambdaScript.Annotate
 
-import LambdaScript.Print
-
--- | Infer types for the whole progran.
+-- | Infer types for the whole program, then resolve all type variables and
+--   annotate the AST using the most concrete type possible for every
+--   expression.
 infer :: Program -> (Program, Subst)
 infer (Program defs) =
   case runTCM $ tiDefs assumptions (map TypeDef types ++ defs) of
-    ((_, defs'), subst) -> (Program defs', subst)
+    ((_, defs'), subst) -> (annotate subst (Program defs'), subst)
 
 -- | Infer the type of a list of definitions.
 tiDefs :: Infer [Def] [Assump]
