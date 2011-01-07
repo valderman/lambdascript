@@ -125,11 +125,19 @@ desuExpr = go
     go (EAnd a b)        = EAnd (desuExpr a) (desuExpr b)
     go (EOr a b)         = EOr (desuExpr a) (desuExpr b)
     go (ENot a)          = ENot (desuExpr a)
-    go (ELambda v x)     = ELambda v (desuExpr x)
+    go (ELambda v x)     = desuLambda v (desuExpr x)
     go (EIf a b c)       = EIf (desuExpr a) (desuExpr b) (desuExpr c)
     go (ECase ex pats)   = ECase (desuExpr ex) (map desuCasePat pats)
     go (EBinds ex defs)  = EBinds (desuExpr ex) (desuDefs defs)
     go expr              = expr
+
+-- | Desugar a lambda expression; basically turns \a b -> ... into
+--   \a -> \b -> ...
+desuLambda :: [Pattern] -> Expr -> Expr
+desuLambda [v] ex =
+  ELambda [v] ex
+desuLambda (v:vs) ex =
+  ELambda [v] (desuLambda vs ex)
 
 -- | Desugar a case pattern.
 desuCasePat :: CasePattern -> CasePattern
