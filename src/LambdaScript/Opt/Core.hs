@@ -99,8 +99,8 @@ optE o (Oper op e1 e2) =
 optE o (Neg e) =
   optExp o $ Neg (optE o e)
 
-optE o (Call e es) =
-  optExp o $ Call (optE o e) (map (optE o) es)
+optE o (Call n e es) =
+  optExp o $ Call n (optE o e) (map (optE o) es)
 
 optE o (FunExp (Lambda vs s)) =
   optExp o $ FunExp (Lambda vs (optS o s))

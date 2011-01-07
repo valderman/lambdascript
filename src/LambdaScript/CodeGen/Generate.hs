@@ -64,6 +64,14 @@ oper op a b = do
 allTrue :: [Exp] -> Exp
 allTrue = foldl1' (Oper And)
 
+-- | Returns the number of arguments the given expression would take when
+--   called as a function.
+nargs :: Expr -> Int
+nargs (ETyped _ t) = nargs' t
+  where
+    nargs' (TOp _ t) = 1+nargs' t
+    nargs' _         = 0
+
 genExpr :: Expr -> CG Exp
 genExpr (ETyped ex t) = genExpr' t ex
   where
@@ -90,7 +98,7 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (EApp f x) = do
       f' <- genExpr f
       x' <- genExpr x
-      return $ Call f' [thunk x']
+      return $ Call (nargs f) f' [thunk x']
 
     -- Various combinators for expressions.
     genExpr' t (EList (ex:exs)) = do
@@ -119,7 +127,7 @@ genExpr (ETyped ex t) = genExpr' t ex
       a' <- genExpr a
       b' <- genExpr b
       -- ++ is also a function, so thunk the args.
-      return $ Call (FunExp $ FunIdent "_conc") [thunk a', thunk b']
+      return $ Call 2 (FunExp $ FunIdent "_conc") [thunk a', thunk b']
     
     -- Loooooong list of binary operators; boring!
     genExpr' t (EAnd a b) = oper And a b

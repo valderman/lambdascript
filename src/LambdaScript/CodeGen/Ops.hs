@@ -20,7 +20,12 @@ data Exp
   | Oper      Oper Exp Exp
   | Neg       Exp
   | FunExp    Fun
-  | Call      Exp [Exp]
+    -- The first argument of the call primitive is the maximum number of args
+    -- that may be passed to the function; the second argument is the function
+    -- to be called, and the third is the list of arguments.
+    -- The max # of args bit is needed to optimize \a -> \b -> ...
+    -- into \a b -> ...
+  | Call      Int Exp [Exp]
   | NoExp
 
 data Stmt
@@ -40,9 +45,9 @@ data Oper
 
 -- | Functions
 data Fun
-  = FunIdent String
-  | Lambda    [Var] Stmt
-  | Construct Type  ConstrID
+  = FunIdent  String
+  | Lambda    [Var]  Stmt
+  | Construct Type   ConstrID
 
 type NamedFunction = (String, [Var], Stmt)
 
