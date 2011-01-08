@@ -1,6 +1,6 @@
 -- | Turn all \a -> \b -> ... functions into \a b -> ...
---   Note that this optimization depends on the Uncurry optimization to
---   generate working code.
+--   Note that this optimization depends on the FoldCalls and
+--   ClosuresFromFoldedCalls optimizations to generate correct code.
 module LambdaScript.Opt.Uncurry (LambdaScript.Opt.Uncurry.uncurry) where
 import LambdaScript.Opt.Core
 import LambdaScript.CodeGen.Ops
@@ -14,9 +14,6 @@ uncurry = Opt {
 delLast :: [a] -> [a]
 delLast (x:xs@(_:_)) = x:delLast xs
 delLast _          = []
-
-newVars :: [Var]
-newVars = map (\n -> Global $ "_" ++ show n ++ "_") [0..]
 
 -- | Inlines any functions at the end of this function.
 --   TODO:

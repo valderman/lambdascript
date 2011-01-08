@@ -1,5 +1,5 @@
 -- | Core framework for optimizing Lambdascript
-module LambdaScript.Opt.Core (Opt (..), Optimize (..)) where
+module LambdaScript.Opt.Core (Opt (..), Optimize (..), newVars) where
 import LambdaScript.CodeGen.Ops
 import LambdaScript.CodeGen.Module
 
@@ -24,6 +24,12 @@ instance Optimize Stmt where
 
 instance Optimize Exp where
   optimize = optE
+
+-- | Generate a list of new variables that are guaranteed not to name clash
+--   with any pre-optimization variables. Note, however, that they may quite
+--   possible clash with other vars taken from this list if care is not taken.
+newVars :: [Var]
+newVars = map (\n -> Global $ "_" ++ show n ++ "_") [0..]
 
 -- | Optimize a function using the given optimization. As with 'optS',
 --   optimization is bottom up.

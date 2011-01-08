@@ -10,6 +10,8 @@ import LambdaScript.Opt.ZapArrays
 import LambdaScript.Opt.ReduceBlocks
 import LambdaScript.Opt.NoUselessAssigns
 import LambdaScript.Opt.Uncurry as U
+import LambdaScript.Opt.FoldCalls
+import LambdaScript.Opt.ClosuresFromFoldedCalls
 
 -- | The list of optimizations to apply to the list of functions. Optimizations
 --   are applied from left to right.
@@ -20,8 +22,10 @@ opts = [
     noObviousIfs,
     zapArrays,
     reduceBlocks,
-    noUselessAssigns
-    -- U.uncurry -- we can't turn this on until we make all function calls aware.
+    noUselessAssigns,
+    U.uncurry,
+    foldCalls,
+    closuresFromFolded
   ]
 
 -- | Apply optimizations to the functions.
