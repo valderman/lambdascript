@@ -93,5 +93,6 @@ gen m cs env firstLocal (ConstDef (Abs.Ident id) ex) =
     (_, st) -> Function {
         funName = id,
         mod     = "",
-        stmts   = reverse $ code st
+        stmts   = reverse $ code st,
+        args    = []
       }

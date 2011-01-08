@@ -12,6 +12,7 @@ import LambdaScript.Opt.NoUselessAssigns
 import LambdaScript.Opt.Uncurry as U
 import LambdaScript.Opt.FoldCalls
 import LambdaScript.Opt.ClosuresFromFoldedCalls
+import LambdaScript.Opt.UnThunkFunc
 
 -- | The list of optimizations to apply to the list of functions. Optimizations
 --   are applied from left to right.
@@ -25,10 +26,11 @@ opts = [
     noUselessAssigns,
     U.uncurry,
     foldCalls,
-    closuresFromFolded
+    closuresFromFolded,
+    unEvalGlobals
   ]
 
 -- | Apply optimizations to the functions.
 applyOpts :: [Function] -> [Function]
 applyOpts fs =
-  foldl' (\fs o -> optimize o fs) fs opts
+  map unThunkFunc $ foldl' (\fs o -> optimize o fs) fs opts

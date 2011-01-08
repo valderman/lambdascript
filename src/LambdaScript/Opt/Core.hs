@@ -34,8 +34,8 @@ newVars = map (\n -> Global $ "_" ++ show n ++ "_") [0..]
 -- | Optimize a function using the given optimization. As with 'optS',
 --   optimization is bottom up.
 optF :: Opt -> Function -> Function
-optF o (Function n m ss) =
-  Function n m (map (optS o) ss)
+optF o (Function n m as ss) =
+  Function n m as (map (optS o) ss)
 
 
 -- | Apply the given optimization recursively to the given statement.
