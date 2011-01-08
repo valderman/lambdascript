@@ -8,6 +8,14 @@ token VIdent (lower (letter | digit | '_' | '\'')*) ;
 comment "--" ;
 comment "{-" "-}" ;
 
+-- A module consists of an export declaration, imports, and a program.
+Module. Module ::= "export" [Export] ";" [Import] Program;
+Export. Export ::= VIdent;
+separator nonempty Export ",";
+
+Import. Import ::= "import" VIdent ";" ;
+separator Import "" ;
+
 -- a program consists of a list of definitions
 Program. Program ::= [Def] ;
 
