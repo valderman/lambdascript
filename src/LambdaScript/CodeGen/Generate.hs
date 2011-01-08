@@ -75,7 +75,13 @@ nargs (ETyped _ t) = nargs' t
 genExpr :: Expr -> CG Exp
 genExpr (ETyped ex t) = genExpr' t ex
   where
-    -- Constructor; just look it up.
+    -- True/False constructors are special
+    genExpr' t (EConstr (TIdent "True")) = do
+      return $ Ops.Const $ NumConst $ 1
+    genExpr' t (EConstr (TIdent "False")) = do
+      return $ Ops.Const $ NumConst $ 0
+    
+-- Constructor; just look it up.
     genExpr' t (EConstr (TIdent id)) = do
       constrID id >>= return . FunExp . Construct t
 
