@@ -30,6 +30,7 @@ data Exp
 
 data Stmt
   = Assign Var Exp
+  | SelfThunk String [Stmt]
   | If      Exp Stmt (Maybe Stmt)
     -- The first argument of the return primitive is the arity of the returned
     -- expression. The optimizer needs this information to inline stuff like

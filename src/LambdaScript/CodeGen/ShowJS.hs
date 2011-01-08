@@ -5,25 +5,43 @@ import qualified LambdaScript.Abs as A
 import Data.List (intercalate)
 
 instance Show Exp where
-  show (Thunk ex)      = "function _(){if(_u(_)) _.x=" ++ show ex ++ ";return _.x;}"
-  show (Eval ex)       = show ex ++ "()"
-  show (Tailcall ex)   = "_tc(" ++ show ex ++ ")"
-  show (Index ex ix)   = show ex ++ "[" ++ show ix ++ "]"
-  show (Array exs)     = "[" ++ intercalate "," (map show exs) ++ "]"
-  show (ConstrIs e c)  = show e ++ "[0]" ++ " == " ++ show c
-  show (Cons x xs)     = "[1," ++ show x ++ "," ++ show xs ++ "]"
-  show (Const c)       = show c
-  show (Ident v)       = show v
-  show (Oper o e1 e2)  = "(" ++ show e1 ++ ")" ++ show o ++ "(" ++ show e2 ++ ")"
-  show (Neg ex)        = "!(" ++ show ex ++ ")"
-  show (FunExp f)      = show f
-  show (Call _ f args) = show f ++ "(" ++
-                           intercalate "," (map show args) ++
-                           ")"
-  show (NoExp)         = ""
-  show x               = error $ "No Show instance for " ++ show x ++ "!"
+  show (Thunk ex) =
+    "function _(){if(_u(_)) _.x=" ++ show ex ++ ";return _.x;}"
+  show (Eval ex) =
+    show ex ++ "()"
+  show (Tailcall ex) =
+    "_tc(" ++ show ex ++ ")"
+  show (Index ex ix) =
+    show ex ++ "[" ++ show ix ++ "]"
+  show (Array exs) =
+    "[" ++ intercalate "," (map show exs) ++ "]"
+  show (ConstrIs e c) =
+    show e ++ "[0]" ++ " == " ++ show c
+  show (Cons x xs) =
+    "[1," ++ show x ++ "," ++ show xs ++ "]"
+  show (Const c) =
+    show c
+  show (Ident v) =
+    show v
+  show (Oper o e1 e2) =
+    "(" ++ show e1 ++ ")" ++ show o ++ "(" ++ show e2 ++ ")"
+  show (Neg ex) =
+    "!(" ++ show ex ++ ")"
+  show (FunExp f) =
+    show f
+  show (Call _ f args) =
+    show f ++ "(" ++
+        intercalate "," (map show args) ++
+      ")"
+  show (NoExp) =
+    ""
+  show x =
+    error $ "No Show instance for Exp: " ++ show x ++ "!"
 
 instance Show Stmt where
+  show (SelfThunk id ss) =
+    "if(_u(" ++ id ++ ")){" ++ concat (map show ss) ++ ";}return " ++ id ++ ".x;"
+  show (Assign v@(Global id) ex) = show v ++ " = " ++ show ex ++ ";\n"
   show (Assign v ex) = "var " ++ show v ++ " = " ++ show ex ++ ";\n"
   show (If ex th el) = "if(" ++ show ex ++ ") " ++
                           show th ++ "\n" ++
