@@ -24,9 +24,11 @@ opts = [
     zapArrays,
     reduceBlocks,
     noUselessAssigns,
+{-  Disable these three until the issue with generics returning functions
+    is resolved.
     U.uncurry,
     foldCalls,
-    closuresFromFolded,
+    closuresFromFolded,-}
     unEvalGlobals
   ]
 
