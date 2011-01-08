@@ -9,7 +9,7 @@ assumptions = map (\(id, t) -> id :>: quantify theVars t) defs
 functions :: Def
 functions =
   BGroup $ BindGroup $ flip map defs $ \(name, _) ->
-    ConstDef (Ident name) (EConstr $ TIdent "()")
+    ConstDef (Ident name) (ETyped (EConstr $ TIdent "()") tUnit)
 
 theVars = map VIdent ["a"]
 
