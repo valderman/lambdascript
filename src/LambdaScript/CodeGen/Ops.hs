@@ -67,12 +67,14 @@ strConst :: String -> Const
 strConst = StrConst
 
 -- | Representation of a variable; basically just an ID.
-data Var = Var Int | Global String
+--   A global consists of an arity and a name, and a temp var is just a name.
+data Var = Var Int | Global Int String | Temp String
   deriving Eq
 
 instance Show Var where
-  show (Var n)    = '_' : show n
-  show (Global s) = s
+  show (Var n)      = '_' : show n
+  show (Global _ s) = s
+  show (Temp s)     = s
 
 instance Num Var where
   (Var a) + (Var b) = Var (a+b)

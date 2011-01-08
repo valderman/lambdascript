@@ -13,10 +13,15 @@ unEvalGlobals = Opt {
   }
 
 unEvalGlobal :: Exp -> Exp
-unEvalGlobal (Call n (Eval f@(Ident (Global _))) args) =
-  Call n f args
+unEvalGlobal (Call n (Eval f@(Ident (Global arity _))) args) | arity > 0 =
+  Call n f (map thunkGlobal args)
+unEvalGlobal (Call n f args) =
+  Call n f (map thunkGlobal args)
 unEvalGlobal x =
   x
+
+thunkGlobal g@(Ident (Global n _)) | n > 0 = Thunk g
+thunkGlobal x                              = x
 
 -- Having global functions as thunks isn't really beneficial in any way.
 -- Since the body of every function only consists of a lambda function,
@@ -24,9 +29,13 @@ unEvalGlobal x =
 -- If it's a nullary function however, thunking it is still beneficial.
 unThunkFunc :: Function -> Function
 unThunkFunc (Function n m _ [Return arity (FunExp (Lambda as (Block b)))]) =
-    Function n m as b
+  Function n m as b
+unThunkFunc (Function n m [] [Return arity ex]) | arity > 0 =
+  Function n m [Temp "a"] [
+      Return (arity-1) (Call arity ex [Ident $ Temp "a"])
+    ]
 unThunkFunc (Function n m _ b) =
-    Function n m [] [(SelfThunk n assignified)]
+  Function n m [] [(SelfThunk n assignified)]
   where
     replaceLast [_] x'    = [x']
     replaceLast (x:xs) x' = x : replaceLast xs x'
@@ -35,6 +44,6 @@ unThunkFunc (Function n m _ b) =
     assignified =
       case last b of
         Return _ ex ->
-          replaceLast b (Assign (Global $ n ++ ".x") ex)
+          replaceLast b (Assign (Global 0 $ n ++ ".x") ex)
         _ ->
           error $ "Last statement in lambda not return!\n" ++ show b

@@ -27,7 +27,7 @@ uncurry' ex@(FunExp (Lambda vs (Block ss))) =
     Return n (FunExp (Lambda vs' (Block ss'))) ->
       FunExp (Lambda (vs ++ vs') (Block (delLast ss ++ ss')))
     Return n (FunExp (FunIdent id)) ->
-      inlineFunIdent n (Ident $ Global id)
+      inlineFunIdent n (Ident $ Global 1 id)
     Return n v@(Ident _) ->
       inlineFunIdent n v
     -- Only idents are ever thunks, so it can't be anything but an ident.

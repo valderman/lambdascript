@@ -35,7 +35,7 @@ generate p@(Program defs) =
 
     -- Assign IDs to all definitions in a single bind group.
     numberGroups (BGroup (BindGroup defs)) =
-      map (\(ConstDef (A.Ident id) _) -> (id, Global id)) defs
+      map (\(ConstDef (A.Ident id) ex) -> (id, Global (nargs ex) id)) defs
     numberGroups _ =
       []
 
@@ -81,7 +81,7 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (EConstr (TIdent "False")) = do
       return $ Ops.Const $ BoolConst False
     
--- Constructor; just look it up.
+    -- Constructor; just look it up.
     genExpr' t (EConstr (TIdent id)) = do
       constrID id >>= return . FunExp . Construct t
 

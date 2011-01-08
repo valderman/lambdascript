@@ -41,7 +41,7 @@ instance Show Exp where
 instance Show Stmt where
   show (SelfThunk id ss) =
     "if(_u(" ++ id ++ ")){" ++ concat (map show ss) ++ ";}return " ++ id ++ ".x;"
-  show (Assign v@(Global id) ex) = show v ++ " = " ++ show ex ++ ";\n"
+  show (Assign v@(Global _ id) ex) = show v ++ " = " ++ show ex ++ ";\n"
   show (Assign v ex) = "var " ++ show v ++ " = " ++ show ex ++ ";\n"
   show (If ex th el) = "if(" ++ show ex ++ ") " ++
                           show th ++ "\n" ++

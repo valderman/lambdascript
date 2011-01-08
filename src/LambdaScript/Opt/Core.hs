@@ -29,7 +29,7 @@ instance Optimize Exp where
 --   with any pre-optimization variables. Note, however, that they may quite
 --   possible clash with other vars taken from this list if care is not taken.
 newVars :: [Var]
-newVars = map (\n -> Global $ "_" ++ show n ++ "_") [0..]
+newVars = map (\n -> Temp $ "_" ++ show n ++ "_") [0..]
 
 -- | Optimize a function using the given optimization. As with 'optS',
 --   optimization is bottom up.
