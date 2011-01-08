@@ -77,9 +77,9 @@ genExpr (ETyped ex t) = genExpr' t ex
   where
     -- True/False constructors are special
     genExpr' t (EConstr (TIdent "True")) = do
-      return $ Ops.Const $ NumConst $ 1
+      return $ Ops.Const $ BoolConst  True
     genExpr' t (EConstr (TIdent "False")) = do
-      return $ Ops.Const $ NumConst $ 0
+      return $ Ops.Const $ BoolConst False
     
 -- Constructor; just look it up.
     genExpr' t (EConstr (TIdent id)) = do
@@ -246,6 +246,11 @@ genPat ex (PList pats) = do
   genPList ex pats
 genPat ex (PTuple pats) = do
   genPTuple 0 ex pats
+-- True/False constructors are special
+genPat ex (PConstr (TIdent "True") _) = do
+  return $ Oper Eq ex (Ops.Const $ BoolConst True)
+genPat ex (PConstr (TIdent "False") _) = do
+  return $ Oper Eq ex (Ops.Const $ BoolConst False)
 genPat ex (PConstr (TIdent id) args) = do
   cid <- constrID id
   (_, cond) <- foldM (\(n, cond) p -> do
