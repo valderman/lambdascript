@@ -1,14 +1,14 @@
-data Bool = True | False;
+export map, head, tail, take, drop, fst, snd, reverse, filter;
 
-data Maybe a = Nothing | Just a;
+-- data Maybe a = Nothing | Just a;
 
 data Either a b = Left a | Right b;
 
-otherwise :: Bool;
-otherwise = True;
+-- otherwise :: Bool;
+-- otherwise = True;
 
-undefined :: a;
-undefined = error "undefined";
+-- undefined :: a;
+-- undefined = error "undefined";
 
 fst :: (a, b) -> a;
 fst (a, _) = a;
