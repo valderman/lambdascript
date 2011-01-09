@@ -92,7 +92,6 @@ gen m cs env firstLocal (ConstDef (Abs.Ident id) ex) =
   case runState (m ex) (blankState cs env firstLocal) of
     (_, st) -> Function {
         funName = id,
-        mod     = "",
         stmts   = reverse $ code st,
         args    = []
       }

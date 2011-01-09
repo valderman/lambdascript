@@ -7,7 +7,6 @@ import Data.List (intercalate)
 -- | Data type representing a single, exported function.
 data Function = Function {
     funName :: String,
-    mod     :: String,
     args    :: [Var],
     stmts   :: [Stmt]
   }
@@ -26,5 +25,6 @@ instance Show Function where
 -- | Data type representing a single module.
 data Module = Module {
     modName :: String,
+    exports :: [String],
     funcs   :: [Function]
   } deriving Show
