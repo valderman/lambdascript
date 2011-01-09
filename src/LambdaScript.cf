@@ -9,7 +9,11 @@ comment "--" ;
 comment "{-" "-}" ;
 
 -- A module consists of an export declaration, imports, and a program.
-Module. Module ::= "export" [Export] ";" [Import] Program;
+Module. Module ::= Exports [Import] Program;
+
+Exports.   Exports ::= "export" [Export] ";" ;
+NoExports. Exports ::= ;
+
 Export. Export ::= VIdent;
 separator nonempty Export ",";
 
