@@ -13,8 +13,8 @@ data Function = Function {
 
 instance Show Function where
   show f =
-    "function " ++ funName f ++ "(" ++ arglist ++ ")\n" ++
-    show (Block $ stmts f)
+    "$._" ++ funName f ++ " = function(" ++ arglist ++ ")" ++
+    show (Block $ stmts f) ++ ";\n"
     where
       arglist = intercalate "," (map show (args f))
   showList (f:fs) =
@@ -27,4 +27,14 @@ data Module = Module {
     modName :: String,
     exports :: [String],
     funcs   :: [Function]
-  } deriving Show
+  }
+
+instance Show Module where
+  show (Module name exports funcs) =
+    "function _" ++ name ++ "(){\nvar $ = this;\n" ++
+        concat (map show funcs) ++
+        concat (map export exports) ++
+      "}\n" ++ name ++ " = new _" ++ name ++ "();\n"
+    where
+      export f =
+        "$." ++ f ++ " = _exp($._" ++ f ++ ");\n"

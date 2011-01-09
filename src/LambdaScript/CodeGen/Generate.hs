@@ -31,8 +31,14 @@ generate imports p@(Program defs) =
 
     -- Assign IDs for every definition in every bind group.
     env =
-      case concat $ map numberGroups (Builtin.functions : defs) of
-        e -> M.fromList $ e ++ map (\(m,n) -> (n, Ops.Import m n)) imports
+      case concat $ map numberGroups defs of
+        e -> M.fromList $
+              e ++
+              map (\(m,n) -> (n, Ops.Import m n)) imports ++
+              builtins Builtin.functions
+
+    builtins (BGroup (BindGroup defs)) =
+      map (\(ConstDef (A.Ident id) ex) -> (id, Builtin id)) defs
 
     -- Assign IDs to all definitions in a single bind group.
     numberGroups (BGroup (BindGroup defs)) =

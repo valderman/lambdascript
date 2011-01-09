@@ -28,7 +28,7 @@ test_all() {
 	if ./lsc "$f" > /dev/null 2> /dev/null ; then
 	    # blah.ls -> blah.js
 	    jsfile=$(basename $(echo $f | sed -e 's/\(\\*\).ls$/\1.js/'))
-	    echo "print(main());" >> $jsfile
+	    echo "print(main.main()());" >> $jsfile
 
 	    if [ -e tests/oracles/$jsfile ] ; then
 		oracle=$(cat tests/oracles/$jsfile)
