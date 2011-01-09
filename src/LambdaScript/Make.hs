@@ -15,9 +15,9 @@ import LambdaScript.TypeChecker (infer)
 import LambdaScript.CodeGen.Generate (generate)
 import LambdaScript.Opt.Optimize (applyOpts)
 import LambdaScript.Config (Cfg (..))
+import System.Directory (doesFileExist)
 
 -- TODO:
--- * Make the 'file' function aware that modules may be on different paths.
 -- * Detect and error out on dependency cycles.
 -- * Make sure modules only get the imports they explicitly ask for. At the
 --   moment, a module gets not only the asked-for imports, but also the imports
@@ -28,7 +28,11 @@ make :: Cfg -> IO ()
 make cfg = do
   let fp = input cfg
       forcedName = forceModName cfg
-  (names, mods) <- buildModList fp forcedName >>= return . unzip
+      inputdir = case reverse $ drop 1 $ dropWhile (/= '/') $ reverse fp of
+                   "" -> "."
+                   s  -> s
+      libpath = inputdir : extraLibDirs cfg ++ [libDir cfg]
+  (names, mods) <- buildModList fp libpath forcedName >>= return . unzip
   -- Create a module => exported functions mapping.
   -- If a module lacks an export statement, export nothing to othermodules.
   -- However, EVERYTHING is later exported to the user.
@@ -39,7 +43,7 @@ make cfg = do
       -- the functions each module imports.
       imports = map (mkImpList exports) mods
       mods' = zipWith3 genModule names imports (checkList mods)
-  writeBundle (output cfg ++ ".js") mods'
+  writeBundle (output cfg ++ ".js") (libDir cfg) mods'
   where
     -- Create the list of imports for the given module.
     mkImpList es (Module _ is _) =
@@ -47,12 +51,12 @@ make cfg = do
                     Export (VIdent fun) <- es Map.! mod]
 
 -- | Write a compiled module to file.
-writeBundle :: FilePath -> [M.Module] -> IO ()
-writeBundle fp m = do
-  runtime <- readFile "lib/runtime.js"
+writeBundle :: FilePath -> FilePath -> [M.Module] -> IO ()
+writeBundle fp libpath mods = do
+  runtime <- readFile $ libpath ++ "/runtime.js"
   -- Strip comments from the runtime
   let rt = unlines [x | x <- lines runtime, not (null x) && take 2 x /= "//"]
-  writeFile fp $ rt ++ concat (map show m)
+  writeFile fp $ rt ++ concat (map show mods)
 
 -- | Generate code for a module.
 genModule :: String             -- ^ Filename of the module to generate code
@@ -76,23 +80,36 @@ genModule n is (Module exs _ p) =
       _           -> map M.funName funcs
 
 -- | Returns the path of the file containing the given module.
-file :: VIdent -> FilePath
-file (VIdent id) = id ++ ".ls"
+file :: String      -- ^ Module to find file for.
+     -> [FilePath]  -- ^ List of library search paths.
+     -> IO FilePath
+file mod (p:paths) = do
+  let path = p ++ "/" ++ mod ++ ".ls"
+  exists <- doesFileExist path
+  if exists
+    then return path
+    else file mod paths
+file m _ =
+  error $ "The module " ++ m ++
+          " could not be found on any given library path!"
 
 -- | Builds a list of all modules that should be compiled.
 --   The list is dependency ordered.
-buildModList :: FilePath -- ^ Base module to compile
-             -> String   -- ^ If a name different from the file name is to be
-                         --   used for the base module, this is it.
+buildModList :: FilePath   -- ^ Base module to compile
+             -> [FilePath] -- ^ List of directories to search for modules.
+             -> String     -- ^ If a name different from the file name is to be
+                           --   used for the base module, this is it.
              -> IO [(String, Abs.Module)]
-buildModList fp forceName = do
+buildModList fp libpaths forceName = do
   str <- readFile fp
   -- Take the base module, parse it enough to extract its dependencies, do the
   -- same to the dependencies recursively to obtain a dependency list, then
   -- append the base module to the end of the list.
   (deps, mod) <- case pModule $ tokens str of
-                   Ok m@(Module exs is _) -> do
-                     d <- mapM (\(Import i) -> buildModList (file i) "") is
+                   Ok m@(Module exs imports _) -> do
+                     d <- mapM (\(Import (VIdent i)) ->
+                                 file i libpaths >>= \f -> buildModList f libpaths "")
+                               imports
                      let name = if (not . null) forceName
                                   then forceName
                                   else modName fp
