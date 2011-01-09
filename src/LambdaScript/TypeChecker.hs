@@ -11,10 +11,10 @@ import LambdaScript.Annotate
 -- | Infer types for the whole program, then resolve all type variables and
 --   annotate the AST using the most concrete type possible for every
 --   expression.
-infer :: Program -> (Program, Subst)
-infer (Program defs) =
-  case runTCM $ tiDefs assumptions (map TypeDef types ++ defs) of
-    ((_, defs'), subst) -> (annotate subst (Program defs'), subst)
+infer :: Assumps -> Program -> (Program, Assumps)
+infer as (Program defs) =
+  case runTCM $ tiDefs (assumptions ++ as) (map TypeDef types ++ defs) of
+    ((as', defs'), subst) -> (annotate subst (Program defs'), as')
 
 -- | Infer the type of a list of definitions.
 tiDefs :: Infer [Def] [Assump]

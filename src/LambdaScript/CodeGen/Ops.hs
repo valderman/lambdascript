@@ -68,13 +68,15 @@ strConst = StrConst
 
 -- | Representation of a variable; basically just an ID.
 --   A global consists of an arity and a name, and a temp var is just a name.
-data Var = Var Int | Global Int String | Temp String
+--   An Import variable consists of a module name and a function name.
+data Var = Var Int | Global Int String | Temp String | Import String String
   deriving Eq
 
 instance Show Var where
   show (Var n)      = '_' : show n
   show (Global _ s) = s
   show (Temp s)     = s
+  show (Import m s) = m ++ "._" ++ s
 
 instance Num Var where
   (Var a) + (Var b) = Var (a+b)

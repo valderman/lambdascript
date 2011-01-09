@@ -10,9 +10,10 @@ import Data.List (foldl1', foldl')
 import Control.Monad (foldM)
 import qualified LambdaScript.Builtins as Builtin
 
--- | Generate code for all functions in a program.
-generate :: Program -> [Function]
-generate p@(Program defs) =
+-- | Generate code for all functions in a program. Takes a list of imports and
+--   a program to generate code for as its arguments.
+generate :: [(String, String)] -> Program -> [Function]
+generate imports p@(Program defs) =
   concat bgs
   where
     constrs =
@@ -31,7 +32,7 @@ generate p@(Program defs) =
     -- Assign IDs for every definition in every bind group.
     env =
       case concat $ map numberGroups (Builtin.functions : defs) of
-        e -> M.fromList e
+        e -> M.fromList $ e ++ map (\(m,n) -> (n, Ops.Import m n)) imports
 
     -- Assign IDs to all definitions in a single bind group.
     numberGroups (BGroup (BindGroup defs)) =

@@ -3,9 +3,9 @@ import System.Environment (getArgs)
 import qualified Data.Map as M
 import LambdaScript.Desugar (desugar)
 import LambdaScript.Depends (bindGroups)
-import LambdaScript.Par (pProgram)
+import LambdaScript.Par (pModule)
 import LambdaScript.Lex (tokens)
-import LambdaScript.Abs (Program)
+import LambdaScript.Abs (Module (..), Program)
 import LambdaScript.ErrM
 import LambdaScript.TypeChecker (infer)
 import LambdaScript.CodeGen.Generate (generate)
@@ -18,7 +18,7 @@ main = do
   -- Really ugly way of ensuring p' is evaluated enough to spot any errors
   -- before we start writing any code to file without having to write NFData
   -- instances for the intermediate code types.
-  case generate p of
+  case generate [] p of
     p' | length p' /= -1 -> do
       let jsfile = reverse
                  . ("sj" ++) 
@@ -35,7 +35,7 @@ parseAndCheck :: FilePath -> IO Program
 parseAndCheck fp = do
   str <- readFile fp
   let (prog, subst) =
-        case pProgram $ tokens str of
-          Ok p   -> infer $ bindGroups $ desugar p
-          Bad s  -> error $ "Err: " ++ s
+        case pModule $ tokens str of
+          Ok (Module exs is p) -> infer [] $ bindGroups $ desugar p
+          Bad s                -> error $ "Err: " ++ s
   return prog

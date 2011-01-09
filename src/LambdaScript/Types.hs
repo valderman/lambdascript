@@ -197,12 +197,14 @@ quantify vs t = Forall (length vs) (apply s t)
 
 data Assump = ID :>: Scheme deriving Show
 
+type Assumps = [Assump]
+
 instance Types Assump where
   apply s (id :>: t) = id :>: apply s t
   freeVars (_ :>: t) = freeVars t
 
 -- | Look up a symbol in the table, monadic fail if it's not found.
-find :: Monad m => ID -> [Assump] -> m Scheme
+find :: Monad m => ID -> Assumps -> m Scheme
 find id ((id' :>: sc):as) | id == id' = return sc
                           | otherwise = find id as
 find id _ = fail $ "Unbound identifier: " ++ id
