@@ -22,6 +22,10 @@ import System.Directory (doesFileExist)
 -- * Make sure modules only get the imports they explicitly ask for. At the
 --   moment, a module gets not only the asked-for imports, but also the imports
 --   from each of its imports' imports and so on.
+-- * Add export lists for types; as things stand, ALL types are ALWAYS
+--   exported to everyone, which isn't all that desirable.
+-- * Warn when a local definition shadows an imported one and, preferrably,
+--   add some way of resolving such ambiguities.
 
 -- | Build a lambdascript file and all its dependencies.
 make :: Cfg -> IO ()
@@ -130,10 +134,10 @@ prepare (Module exs is p) =
 
 -- | Type check and annotate a module. Apart from the annotated module, also
 --   return the list of assumptions for the module.
-typeCheck :: Assumps -> Abs.Module -> (Abs.Module, Assumps)
-typeCheck as (Module exs is p) =
-  case infer as p of
-    (p', as') -> (Module exs is p', prune as')
+typeCheck :: Assumps -> [NewType] -> Abs.Module -> (Abs.Module, [NewType], Assumps)
+typeCheck as ts (Module exs is p) =
+  case infer as ts p of
+    (p', as', ts') -> (Module exs is p', ts', prune as')
   where
     -- Only keep symbols that we either got from another dependency or that
     -- we exported ourselves in the list of assumptions.
@@ -150,11 +154,12 @@ typeCheck as (Module exs is p) =
 -- | Type check a dependency ordered list of modules.
 checkList :: [Abs.Module] -> [Abs.Module]
 checkList ms =
-  reverse $ snd $ foldl' check ([],[]) ms
+  case foldl' check ([],[],[]) ms of
+    (_, _, mods) -> reverse mods
   where
-    check (as, ms) m =
-      case typeCheck as $ prepare m of
-        (m', as') -> (as', m':ms)
+    check (assump, types, mods) mod =
+      case typeCheck assump types $ prepare mod of
+        (mod', types', assump') -> (assump', types', mod':mods)
 
 -- | Returns the module name of the given file.
 modName :: FilePath -> String

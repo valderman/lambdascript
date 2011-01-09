@@ -5,16 +5,20 @@ import Data.Maybe
 import LambdaScript.Abs
 import LambdaScript.Types
 import LambdaScript.TCM
-import LambdaScript.Builtins (assumptions, types)
+import LambdaScript.Builtins as B (assumptions, types)
 import LambdaScript.Annotate
 
 -- | Infer types for the whole program, then resolve all type variables and
 --   annotate the AST using the most concrete type possible for every
 --   expression.
-infer :: Assumps -> Program -> (Program, Assumps)
-infer as (Program defs) =
-  case runTCM $ tiDefs (assumptions ++ as) (map TypeDef types ++ defs) of
-    ((as', defs'), subst) -> (annotate subst (Program defs'), as')
+infer :: Assumps -> [NewType] -> Program -> (Program, Assumps, [NewType])
+infer as importTypes (Program defs) =
+  case runTCM $ tiDefs (B.assumptions ++ as)
+                       (map TypeDef (B.types ++ importTypes) ++ defs) of
+    ((as', defs'), subst) -> (annotate subst (Program defs'), as', types)
+  where
+    types =
+      [t | (TypeDef t) <- defs]
 
 -- | Infer the type of a list of definitions.
 tiDefs :: Infer [Def] [Assump]
