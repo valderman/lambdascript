@@ -25,7 +25,7 @@ test_all() {
     echo "Running good tests..."
     for f in tests/should-work/*; do
 	let goodtotal=$goodtotal+1
-	if ./lsc "$f" > /dev/null 2> /dev/null ; then
+	if ./lsc -mmain "$f" > /dev/null 2> /dev/null ; then
 	    # blah.ls -> blah.js
 	    jsfile=$(basename $(echo $f | sed -e 's/\(\\*\).ls$/\1.js/'))
 	    echo "print(main.main());" >> $jsfile
@@ -80,7 +80,7 @@ test_failed() {
     echo "Running good tests..."
     for f in `cat failed-good`; do
 	let goodtotal=$goodtotal+1
-	if ./lsc "$f" ; then
+	if ./lsc -mmain "$f" ; then
             let goodpassed=$goodpassed+1
 	else
             echo "FAILED: $f"

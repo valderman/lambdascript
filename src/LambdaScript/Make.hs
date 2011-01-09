@@ -14,6 +14,7 @@ import LambdaScript.Types (Assump (..), Assumps, find)
 import LambdaScript.TypeChecker (infer)
 import LambdaScript.CodeGen.Generate (generate)
 import LambdaScript.Opt.Optimize (applyOpts)
+import LambdaScript.Config (Cfg (..))
 
 -- TODO:
 -- * Make the 'file' function aware that modules may be on different paths.
@@ -23,10 +24,10 @@ import LambdaScript.Opt.Optimize (applyOpts)
 --   from each of its imports' imports and so on.
 
 -- | Build a lambdascript file and all its dependencies.
-make :: FilePath -- ^ Module to build.
-     -> String   -- ^ Module name to use instead of the file name, if any.
-     -> IO ()
-make fp forcedName = do
+make :: Cfg -> IO ()
+make cfg = do
+  let fp = input cfg
+      forcedName = forceModName cfg
   (names, mods) <- buildModList fp forcedName >>= return . unzip
   -- Create a module => exported functions mapping.
   -- If a module lacks an export statement, export nothing to othermodules.
