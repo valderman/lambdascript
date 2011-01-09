@@ -27,13 +27,14 @@ test_all() {
 	let goodtotal=$goodtotal+1
 	if ./lsc -mmain "$f" > /dev/null 2> /dev/null ; then
 	    # blah.ls -> blah.js
-	    jsfile=$(basename $(echo $f | sed -e 's/\(\\*\).ls$/\1.js/'))
+	    jsfile=a.out.js
 	    echo "print(main.main());" >> $jsfile
 
-	    if [ -e tests/oracles/$jsfile ] ; then
-		oracle=$(cat tests/oracles/$jsfile)
+        oracle=tests/oracles/$(basename $(echo $f | sed -e 's/\(\\*\).ls$/\1.js/'))
+	    if [ -e $oracle ] ; then
+		oracleres=$(cat $oracle)
 		result=$(js $jsfile)
-		if [ "$oracle" == "$result" ] ; then
+		if [ "$oracleres" == "$result" ] ; then
 		    let goodpassed=$goodpassed+1
 		else
 		    echo "Wrong result: $f"

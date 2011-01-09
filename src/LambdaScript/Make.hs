@@ -39,7 +39,7 @@ make cfg = do
       -- the functions each module imports.
       imports = map (mkImpList exports) mods
       mods' = zipWith3 genModule names imports (checkList mods)
-  writeBundle (modName fp ++ ".js") mods'
+  writeBundle (output cfg ++ ".js") mods'
   where
     -- Create the list of imports for the given module.
     mkImpList es (Module _ is _) =
