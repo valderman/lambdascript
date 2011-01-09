@@ -17,6 +17,8 @@ unEvalGlobal (Call n (Eval f@(Ident (Global arity _))) args) | arity > 0 =
   Call n f (map thunkGlobal args)
 unEvalGlobal (Call n (Eval f@(Ident (Import _ a))) args) =
   Call n f (map thunkGlobal args)
+unEvalGlobal (Call n (Eval f@(Ident (Builtin a))) args) =
+  Call n f (map thunkGlobal args)
 unEvalGlobal (Call n f args) =
   Call n f (map thunkGlobal args)
 unEvalGlobal x =
