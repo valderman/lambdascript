@@ -53,10 +53,7 @@ splitBy delim = splitBy' []
       [reverse a]
 
 -- | "Parses" the parameters of an argument for a handler.
---   The parameters are assumed to be specified either like -xfoo,bar or like
---   -m foo,bar.
+--   The parameters are assumed to be specified like -xfoo,bar.
 withParams :: Int -> ([String] -> a -> Handled a) -> Handler a
 withParams len h s ss a =
-  case drop len s of
-    "" -> h (splitBy ',' $ head ss) a
-    s' -> h (splitBy ',' s') a
+  h (splitBy ',' $ drop len s) a
