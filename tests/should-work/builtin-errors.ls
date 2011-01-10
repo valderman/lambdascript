@@ -1,5 +1,5 @@
 import std;
 
-f (Just x) = x;
+f (Just x) = "lol internet";
 
 main = f Nothing;
