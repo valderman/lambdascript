@@ -15,8 +15,9 @@ theVars = map VIdent ["a"]
 
 defs :: [(ID, Type)]
 defs = [
-    ("()",        tUnit),
-    ("error",     tString ~> tv "a")
+    ("()",    tUnit),
+    ("error", tString ~> tv "a"),
+    ("jsfun", tString ~> tInt ~> tv "a")
   ]
 
 types :: [NewType]
