@@ -1,3 +1,5 @@
+import std;
+
 reverse :: [a] -> [a];
 reverse = reverse' [] {
     reverse' acc (x:xs) = reverse' (x:acc) xs;

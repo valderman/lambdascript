@@ -1,3 +1,5 @@
+import std;
+
 -- a binary tree using Ints as its key
 data Tree a
   = Nil

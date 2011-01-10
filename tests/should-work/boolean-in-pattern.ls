@@ -1,3 +1,5 @@
+import std;
+
 f (True)  = 3;
 f (False) = 0;
 
