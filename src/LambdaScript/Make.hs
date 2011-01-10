@@ -135,9 +135,9 @@ prepare (Module exs is p) =
 -- | Type check and annotate a module. Apart from the annotated module, also
 --   return the list of assumptions for the module.
 typeCheck :: Assumps -> [NewType] -> Abs.Module -> (Abs.Module, [NewType], Assumps)
-typeCheck as ts (Module exs is p) =
-  case infer as ts p of
-    (p', as', ts') -> (Module exs is p', ts', prune as')
+typeCheck as ts mod@(Module exs _ _) =
+  case infer as ts mod of
+    (mod', as', ts') -> (mod', ts', prune as')
   where
     -- Only keep symbols that we either got from another dependency or that
     -- we exported ourselves in the list of assumptions.

@@ -8,15 +8,26 @@ import LambdaScript.TCM
 import LambdaScript.Builtins as B (assumptions, types)
 import LambdaScript.Annotate
 
--- | Infer types for the whole program, then resolve all type variables and
+-- | Infer types for the whole module, then resolve all type variables and
 --   annotate the AST using the most concrete type possible for every
 --   expression.
-infer :: Assumps -> [NewType] -> Program -> (Program, Assumps, [NewType])
-infer as importTypes (Program defs) =
+infer :: Assumps -> [NewType] -> Module -> (Module, Assumps, [NewType])
+infer as importTypes (Module exports is (Program defs)) =
   case runTCM $ tiDefs (B.assumptions ++ as)
                        (map TypeDef (B.types ++ importTypes) ++ defs) of
-    ((as', defs'), subst) -> (annotate subst (Program defs'), as', types)
+    ((as', defs'), subst) ->
+      let inferredFuncs = [id | BGroup (BindGroup bg) <- defs,
+                                ConstDef (Ident id) _ <- bg]
+      in if null $ exports' \\ inferredFuncs
+           then (Module exports is (annotate subst (Program defs')),
+                 as', types) 
+           else error $ "Trying to export nonexistent functions: "
+                      ++ intercalate ", " inferredFuncs
   where
+    exports' =
+      case exports of
+        (Exports ex) -> map (\(Export (VIdent id)) -> id) ex
+        _            -> []
     types =
       [t | (TypeDef t) <- defs]
 
