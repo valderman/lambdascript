@@ -2,7 +2,7 @@
 token TIdent (upper (letter | digit | '_')*) ;
 
 -- variable or type variable
-token VIdent (lower (letter | digit | '_' | '\'')*) ;
+token VIdent ((lower | '_') (letter | digit | '_' | '\'')*) ;
 
 -- haskell-style comments
 comment "--" ;

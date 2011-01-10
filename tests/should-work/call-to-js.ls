@@ -4,4 +4,4 @@ seqBool a b =
     _       -> b;
   ;
 
-main = seqBool (jsfun "print" 1 27) 0;
+main = seqBool (_jsfun "print" 1 27) 0;
