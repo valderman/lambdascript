@@ -18,7 +18,7 @@ defs = [
     ("()",      tUnit),
     ("error",   tString ~> tv "a"),
     ("_jsfun",  tString ~> tInt ~> tv "a"),
-    ("_export", tv "a" ~> mkADT (TIdent "JSFun") [])
+    ("_export", tInt ~> tv "a" ~> mkADT (TIdent "JSFun") [])
   ]
 
 types :: [NewType]
