@@ -164,10 +164,15 @@ ELambda.  Expr1 ::= "\\" [Pattern] "->" Expr1 ;
 EIf.      Expr1 ::= "if" Expr "then" Expr "else" Expr ;
 ECase.    Expr1 ::= "case" Expr "of" [CasePattern] ;
 EBinds.   Expr  ::= Expr2 "{" [Def] "}" ;
+EDo.      Expr  ::= "do" "{" [DoStmt] "}" ;
 -- internal: type annotated expression
 internal ETyped. Expr ::= Expr " :: " Type ;
 coercions Expr 9 ;
 separator Expr "," ;
+
+DoArrow. DoStmt ::= VIdent "<-" Expr ;
+JustDo.  DoStmt ::= Expr ;
+terminator nonempty DoStmt ";" ;
 
 -- a case pattern can be either a pattern followed by "->" and an expression,
 -- or a pattern followed by a list of guarded case expressions.
