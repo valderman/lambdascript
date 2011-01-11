@@ -10,7 +10,6 @@ noZeroCompares = Opt {
   }
 
 noZero :: Exp -> Exp
-noZero (ConstrIs e 0)                   = Neg (Index e $ Const $ NumConst 0)
 noZero (Oper Eq (Const (NumConst 0)) e) = Neg e
 noZero (Oper Eq e (Const (NumConst 0))) = Neg e
 noZero (Oper Ne (Const (NumConst 0)) e) = e

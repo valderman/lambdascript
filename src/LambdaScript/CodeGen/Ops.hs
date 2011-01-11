@@ -11,9 +11,10 @@ data Exp
     -- Use the second expression as an array index into the first
   | Index     Exp Exp
   | Array     [Exp]
-    -- Evaluate the expression and compare its constructor to the given
-    -- constructor ID. If they're the same return true, else return false.
-  | ConstrIs  Exp ConstrID
+    -- Assign the expression to a temp variable and compare its constructor to
+    -- the given constructor ID. If they're the same return true, else return
+    -- false. The given var must be newly created and not used eleswhere.
+  | ConstrIs  Exp ConstrID Var
   | Cons      Exp Exp
   | Const     Const
   | Ident     Var

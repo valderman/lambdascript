@@ -5,6 +5,7 @@ module LambdaScript.Opt.UnThunkFunc (unEvalGlobals, unThunkFunc) where
 import LambdaScript.CodeGen.Ops
 import LambdaScript.CodeGen.Module
 import LambdaScript.Opt.Core
+import LambdaScript.Abs (Type(..), TIdent(..))
 
 unEvalGlobals :: Opt
 unEvalGlobals = Opt {
@@ -38,8 +39,12 @@ unThunkFunc (Function n [] [Return arity ex] t) | arity > 0 =
   Function n [Temp "a"] [
       Return (arity-1) (Call arity ex [Ident $ Temp "a"])
     ] t
-unThunkFunc (Function n _ b t) =
-  Function n [] [(SelfThunk n assignified)] t
+unThunkFunc fun@(Function n _ b t) =
+  case t of
+    TApp (TCon (TIdent "IO")) _ ->
+      fun
+    _ ->
+      Function n [] [(SelfThunk n assignified)] t
   where
     replaceLast [_] x'    = [x']
     replaceLast (x:xs) x' = x : replaceLast xs x'

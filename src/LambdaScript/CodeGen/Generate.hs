@@ -260,10 +260,14 @@ genPat ex (PConstr (TIdent "False") _) = do
   return $ Oper Eq ex (Ops.Const $ BoolConst False)
 genPat ex (PConstr (TIdent id) args) = do
   cid <- constrID id
+  -- We create a new temp var that ConstrIs writes the result of evaluating
+  -- the constructor into; this is to avoid multiple evaluations for non-
+  -- memoizing thunks (that is, IO.)
+  v <- newVar
   (_, cond) <- foldM (\(n, cond) p -> do
-                         c <- genPat (eval $ Index ex $ Ops.Const $ NumConst n) p
+                         c <- genPat (eval $ Index (Ops.Ident v) $ Ops.Const $ NumConst n) p
                          return (n+1, Oper And cond c))
-                     (1, (ex `ConstrIs` cid))
+                     (1, (ConstrIs ex cid v))
                      args
   return cond
 genPat _ PWildcard = do

@@ -90,8 +90,8 @@ optE o (Index e1 e2) =
 optE o (Array es) =
   optExp o $ Array (map (optE o) es)
 
-optE o (ConstrIs e id) =
-  optExp o $ ConstrIs (optE o e) id
+optE o (ConstrIs e id v) =
+  optExp o $ ConstrIs (optE o e) id v
 
 optE o (Cons x xs) =
   optExp o $ Cons (optE o x) (optE o xs)

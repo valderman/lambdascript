@@ -15,8 +15,10 @@ instance Show Exp where
     show ex ++ "[" ++ show ix ++ "]"
   show (Array exs) =
     "[" ++ intercalate "," (map show exs) ++ "]"
-  show (ConstrIs e c) =
-    show e ++ "[0]" ++ " == " ++ show c
+  show (ConstrIs e 0 v) =
+    "!(" ++ show v ++ "=" ++ show e ++ ")[0]"
+  show (ConstrIs e c v) =
+    "(" ++ show v ++ "=" ++ show e ++ ")[0]" ++ " == " ++ show c
   show (Cons x xs) =
     "[1," ++ show x ++ "," ++ show xs ++ "]"
   show (Const c) =
