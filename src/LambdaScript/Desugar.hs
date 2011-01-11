@@ -129,7 +129,27 @@ desuExpr = go
     go (EIf a b c)       = EIf (desuExpr a) (desuExpr b) (desuExpr c)
     go (ECase ex pats)   = ECase (desuExpr ex) (map desuCasePat pats)
     go (EBinds ex defs)  = EBinds (desuExpr ex) (desuDefs defs)
+    go (EDo stmts)       = desuDoBlock stmts
     go expr              = expr
+
+-- | Desugar a do-block.
+--   do a; b; turns into bind a (\_ -> b)
+--   do x <- a; b; turns into bind a (\x -> b)
+desuDoBlock :: [DoStmt] -> Expr
+desuDoBlock stmts =
+  case reverse stmts of
+    (DoArrow _ _:_) ->
+      error "The last statement in a do-block must be an expression!"
+    ((JustDo final):rest) ->
+      -- This should have been a foldr, but since we had to inspect the last
+      -- statement anyway we might as well reverse the list and to a foldl'
+      -- on it instead.
+      foldl' desuStmt final rest
+  where
+    desuStmt next (DoArrow id ex) =
+      EApp (EApp (EVar $ VIdent "_bind") ex) (ELambda [PID id] next)
+    desuStmt next (JustDo ex) =
+      EApp (EApp (EVar $ VIdent "_bind") ex) (ELambda [PWildcard] next)
 
 -- | Desugar a lambda expression; basically turns \a b -> ... into
 --   \a -> \b -> ...
