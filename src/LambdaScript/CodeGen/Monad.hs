@@ -7,7 +7,7 @@ import Control.Monad.State as CMS
 import Data.Map as M
 import LambdaScript.CodeGen.Module
 import LambdaScript.CodeGen.Ops
-import LambdaScript.Abs as Abs (Expr, ConstDef (..), Ident (..))
+import LambdaScript.Abs as Abs (Expr, ConstDef (..), Ident (..), Expr (..))
 
 data CGState = CGState {
     code         :: [Stmt],
@@ -88,10 +88,11 @@ gen :: (Expr -> CG ())     -- ^ Generator to use for code generation.
     -> Var                 -- ^ First var ID that's free for local use.
     -> ConstDef            -- ^ The definition to generate code for.
     -> Function            -- ^ The resulting Function.
-gen m cs env firstLocal (ConstDef (Abs.Ident id) ex) =
+gen m cs env firstLocal (ConstDef (Abs.Ident id) ex@(ETyped _ t)) =
   case runState (m ex) (blankState cs env firstLocal) of
     (_, st) -> Function {
         funName = id,
         stmts   = reverse $ code st,
-        args    = []
+        args    = [],
+        funType = t
       }

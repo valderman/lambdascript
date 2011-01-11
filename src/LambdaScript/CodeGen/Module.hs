@@ -2,13 +2,15 @@
 module LambdaScript.CodeGen.Module where
 import LambdaScript.CodeGen.Ops
 import LambdaScript.CodeGen.ShowJS
+import LambdaScript.Abs (Type (..))
 import Data.List (intercalate)
 
 -- | Data type representing a single, exported function.
 data Function = Function {
     funName :: String,
     args    :: [Var],
-    stmts   :: [Stmt]
+    stmts   :: [Stmt],
+    funType :: Type
   }
 
 instance Show Function where

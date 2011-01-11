@@ -32,14 +32,14 @@ thunkGlobal x                              = x
 -- just shuffle the args around to get rid of one redirection.
 -- If it's a nullary function however, thunking it is still beneficial.
 unThunkFunc :: Function -> Function
-unThunkFunc (Function n _ [Return arity (FunExp (Lambda as (Block b)))]) =
-  Function n as b
-unThunkFunc (Function n [] [Return arity ex]) | arity > 0 =
+unThunkFunc (Function n _ [Return arity (FunExp (Lambda as (Block b)))] t) =
+  Function n as b t
+unThunkFunc (Function n [] [Return arity ex] t) | arity > 0 =
   Function n [Temp "a"] [
       Return (arity-1) (Call arity ex [Ident $ Temp "a"])
-    ]
-unThunkFunc (Function n _ b) =
-  Function n [] [(SelfThunk n assignified)]
+    ] t
+unThunkFunc (Function n _ b t) =
+  Function n [] [(SelfThunk n assignified)] t
   where
     replaceLast [_] x'    = [x']
     replaceLast (x:xs) x' = x : replaceLast xs x'
