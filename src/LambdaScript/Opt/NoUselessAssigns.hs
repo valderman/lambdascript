@@ -4,6 +4,8 @@
 module LambdaScript.Opt.NoUselessAssigns (noUselessAssigns) where
 import LambdaScript.Opt.Core
 import LambdaScript.CodeGen.Ops
+import Data.List (foldl')
+import Data.Maybe (catMaybes, listToMaybe)
 
 noUselessAssigns :: Opt
 noUselessAssigns = Opt {
@@ -11,17 +13,23 @@ noUselessAssigns = Opt {
     optExp = removeAss
   }
 
-uselessAssign :: Stmt -> Bool
-uselessAssign (Assign _ (Ident _)) = True
-uselessAssign _                    = False
+findAs :: Stmt -> Maybe (Var, Var)
+findAs (Forever stmt)        = findAs stmt
+findAs (Block stmts)         = listToMaybe . catMaybes $ map findAs stmts
+findAs (Assign v (Ident v')) = Just (v, v')
+findAs (SelfThunk _ stmts)   = listToMaybe . catMaybes $ map findAs stmts
+findAs (Return _ exp)        = findAsEx exp
+findAs _                     = Nothing
+
+findAsEx :: Exp -> Maybe (Var, Var)
+findAsEx (FunExp (Lambda _ s)) = findAs s
+findAsEx _                     = Nothing
 
 removeAss :: Exp -> Exp
-removeAss ex@(FunExp (Lambda vs (Block ss))) =
-  case span (not . uselessAssign) ss of
-    (pre, []) ->
-      ex
-    (pre, (Assign v (Ident v')):post) ->
-      removeAss $ FunExp (Lambda vs $ Block $ pre ++ optimize (subst v v') post)
+removeAss ex@(FunExp (Lambda vs b)) =
+  case findAs b of
+    Just (v, v') ->
+      removeAss $ FunExp (Lambda vs $ killAssign v v' $ optimize (subst v v') b)
     _ ->
       ex
 removeAss x =
@@ -31,9 +39,17 @@ removeAss x =
 -- of the common traversing infrastructure.
 subst :: Var -> Var -> Opt
 subst v v' = Opt {
-    optStm = id,
+    optStm = killAssign v v',
     optExp = substVar v v'
   }
+
+killAssign :: Var -> Var -> Stmt -> Stmt
+killAssign v v' (Assign x (Ident x'))
+  | x == v && x' == v' =
+    NoStmt
+killAssign _ _ x =
+  x
+
 
 substVar :: Var -> Var -> Exp -> Exp
 substVar v new (Ident v') | (v == v') =
