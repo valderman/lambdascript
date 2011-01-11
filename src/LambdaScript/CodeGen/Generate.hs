@@ -50,9 +50,11 @@ generate imports p@(Program defs) =
 function :: Expr -> CG ()
 function ex = genExpr ex >>= stmt . Return (nargs ex)
 
--- | Smack an Eval primitive on an expression.
+-- | Smack an Eval primitive on an expression. If the expression is a strict
+--   variable, then don't.
 eval :: Exp -> Exp
-eval ex = Eval ex
+eval ex@(Ops.Ident (Strict _)) = ex
+eval ex                        = Eval ex
 
 -- | Turn an expression into a thunk, without double-thunking it.
 thunk :: Exp -> Exp
@@ -193,7 +195,7 @@ genExpr (ETyped ex t) = genExpr' t ex
     -- number of bodies. (See also: recursive documentation)
     genExpr' t (ECase ex cps) = do
       ex' <- genExpr ex
-      v <- newVar
+      v <- newStrict
       genCPs ex' v cps >>= stmt . Forever
       return $ eval $ Ops.Ident v
 
@@ -263,7 +265,7 @@ genPat ex (PConstr (TIdent id) args) = do
   -- We create a new temp var that ConstrIs writes the result of evaluating
   -- the constructor into; this is to avoid multiple evaluations for non-
   -- memoizing thunks (that is, IO.)
-  v <- newVar
+  v <- newStrict
   (_, cond) <- foldM (\(n, cond) p -> do
                          c <- genPat (eval $ Index (Ops.Ident v) $ Ops.Const $ NumConst n) p
                          return (n+1, Oper And cond c))
@@ -317,6 +319,7 @@ genPList ex [] =
 --   pattern [| guard] -> expression. The given Exp gives the variable that is
 --   to be matched against the pattern, and the Var is the variable where the
 --   result of the case expression will be placed.
+--   The result var must be strict.
 genCPs :: Exp -> Var -> [CasePattern] -> CG Stmt
 genCPs ex result (CPNoGuards p thenDo : ps) = do
   (cond, bind) <- isolate $ genPat ex p
@@ -349,7 +352,7 @@ genCPs ex result (CPNoGuards p thenDo : ps) = do
   return . Block $ (If cond
                        (Block $  bind
                               ++ thenStmts
-                              ++ [Assign result $ thunk thenEx, Break])
+                              ++ [Assign result thenEx, Break])
                        Nothing) : elsePart
 genCPs ex result (CPGuards p cases : ps) = do
   (cond, bind) <- isolate $ genPat ex p
@@ -364,10 +367,11 @@ genCPs ex result [] = do
 -- | Generate a guarded expression. Basically, if the guard holds we execute
 --   the associated expression and assign its return value to the result var,
 --   otherwise do nothing.
+--   The result var must be strict.
 genGuard :: Var -> GuardedCaseExpr -> CG Stmt
 genGuard v (GuardedCaseExpr (GuardExpr ge) ex) = do
   guard <- genExpr ge
   (expr, stmts) <- isolate $ genExpr ex
   return $ If guard
-              (Block $ stmts ++ [Assign v $ thunk expr, Break])
+              (Block $ stmts ++ [Assign v expr, Break])
               Nothing

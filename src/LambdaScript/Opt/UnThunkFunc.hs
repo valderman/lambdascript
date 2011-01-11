@@ -28,16 +28,19 @@ unEvalGlobal x =
 thunkGlobal g@(Ident (Global n _)) | n > 0 = Thunk g
 thunkGlobal x                              = x
 
--- Having global functions as thunks isn't really beneficial in any way.
--- Since the body of every function only consists of a lambda function,
--- just shuffle the args around to get rid of one redirection.
--- If it's a nullary function however, thunking it is still beneficial.
+-- | Having global functions as thunks isn't really beneficial in any way.
+--   Since the body of every function only consists of a lambda function,
+--   just shuffle the args around to get rid of one redirection.
+--   If it's a nullary function however, thunking it is still beneficial.
 unThunkFunc :: Function -> Function
 unThunkFunc (Function n _ [Return arity (FunExp (Lambda as (Block b)))] t) =
   Function n as b t
+-- Take the liberty of using a named temp variable "a" to transfer the
+-- argument; no code runs between its creation and last use, so name capture
+-- is impossible.
 unThunkFunc (Function n [] [Return arity ex] t) | arity > 0 =
-  Function n [Temp "a"] [
-      Return (arity-1) (Call arity ex [Ident $ Temp "a"])
+  Function n [NamedTemp "a"] [
+      Return (arity-1) (Call arity ex [Ident $ NamedTemp "a"])
     ] t
 unThunkFunc fun@(Function n _ b t) =
   case t of

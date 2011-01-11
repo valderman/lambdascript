@@ -44,6 +44,15 @@ newVar = do
   put st {nextID = id + 1}
   return id
 
+-- | Create a new variable strict variable; codegen should know to never call
+--   Eval on a strict variable, because that'll screw things up big time.
+newStrict :: CG Var
+newStrict = do
+  st <- get
+  let (Var id) = nextID st
+  put st {nextID = Var $ id + 1}
+  return $ Strict id
+
 -- | Create a variable identifier from a global name and an arity.
 namedGlobal :: String -> Int -> Var
 namedGlobal s n = Global n s

@@ -73,17 +73,19 @@ strConst = StrConst
 data Var
   = Var Int
   | Global Int String
-  | Temp String
+  | NamedTemp String
+  | Strict Int
   | Import String String
   | Builtin String
   deriving Eq
 
 instance Show Var where
-  show (Var n)      = '_' : show n
-  show (Global _ s) = "$._" ++ s
-  show (Temp s)     = s
-  show (Import m s) = m ++ "._" ++ s
-  show (Builtin s)  = s
+  show (Var n)       = '_' : show n
+  show (Global _ s)  = "$._" ++ s
+  show (NamedTemp s) = s
+  show (Strict n)    = '_' : show n
+  show (Import m s)  = m ++ "._" ++ s
+  show (Builtin s)   = s
 
 instance Num Var where
   (Var a) + (Var b) = Var (a+b)
