@@ -65,6 +65,9 @@ optS o (Forever s) =
 optS o Break =
   optStm o Break
 
+optS o NoStmt =
+  NoStmt
+
 optS o x =
   error $ "Can't optimize statement:\n" ++ show x
 
