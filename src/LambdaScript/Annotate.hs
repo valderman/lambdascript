@@ -1,5 +1,5 @@
 -- | Annotate the parse tree with the most concrete types possible.
-module LambdaScript.Annotate (annotate) where
+module LambdaScript.Annotate (annotate, resolve) where
 import LambdaScript.Abs
 import LambdaScript.Types
 

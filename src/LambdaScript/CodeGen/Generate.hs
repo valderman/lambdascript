@@ -69,7 +69,20 @@ oper :: Oper -> Expr -> Expr -> CG Exp
 oper op a b = do
   a' <- genExpr a
   b' <- genExpr b
-  return $ Oper op a' b'
+  if isBasic a
+    then return $ Oper op a' b'
+    else return $ Oper op (Call 0 (FunExp $ FunIdent "$cmp") [a', b'])
+                          (Ops.Const $ NumConst 0)
+  where
+    isBasic (ETyped _ (TApp (TCon (TIdent id)) _)) | id == "*Num" =
+      True
+    isBasic (ETyped _ (TCon (TIdent "Char"))) =
+      True
+    isBasic (ETyped _ (TCon (TIdent "Bool"))) =
+      True
+    isBasic _ =
+      False
+
 
 -- | Create a conjunction of a bunch of expressions.
 allTrue :: [Exp] -> Exp

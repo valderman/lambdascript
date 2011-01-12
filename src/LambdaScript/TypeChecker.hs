@@ -336,6 +336,10 @@ tiComparison as cons x y = do
   (_, x') <- tiExpr as x
   (_, y') <- tiExpr as y
   unify (eUntyped x') (eUntyped y')
+  s <- getSubst
+  case resolve s (eUntyped x') of
+    (TOp _ _) -> fail $ "Comparing functions is not allowed: " ++ show x ++ " and " ++ show y
+    _         -> return ()
   return (as, eTyped (cons x' y') tBool)
 
 -- | Helper to type annotate a pattern.
