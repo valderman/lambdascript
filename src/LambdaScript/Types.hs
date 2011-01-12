@@ -198,7 +198,7 @@ quantify vs t = Forall (length vs) (apply s t)
     vs' = filter (`elem` vs) (freeVars t)
     s   = zip vs' (map TGen [0..])
 
-data Assump = ID :>: Scheme deriving Show
+data Assump = ID :>: Scheme deriving (Show, Eq)
 
 type Assumps = [Assump]
 

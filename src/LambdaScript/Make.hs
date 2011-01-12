@@ -17,6 +17,8 @@ import LambdaScript.Opt.Optimize (applyOpts)
 import LambdaScript.Config (Cfg (..))
 import System.Directory (doesFileExist)
 
+import System.IO.Unsafe
+
 -- TODO:
 -- * Detect and error out on dependency cycles.
 -- * Make sure modules only get the imports they explicitly ask for. At the
@@ -137,7 +139,7 @@ prepare (Module exs is p) =
 typeCheck :: Assumps -> [NewType] -> Abs.Module -> (Abs.Module, [NewType], Assumps)
 typeCheck as ts mod@(Module exs _ _) =
   case infer as ts mod of
-    (mod', as', ts') -> (mod', ts', prune as')
+    (mod', as', ts') -> (mod', ts ++ ts', prune as')
   where
     -- Only keep symbols that we either got from another dependency or that
     -- we exported ourselves in the list of assumptions.
@@ -149,7 +151,7 @@ typeCheck as ts mod@(Module exs _ _) =
       Exports exs -> exs
       _           -> []
     allSyms xs ys =
-      concat $ map (\x -> filter (\(id :>: _) -> x == id) ys) xs
+      nub $ concat $ map (\x -> filter (\(id :>: _) -> x == id) ys) xs
 
 -- | Type check a dependency ordered list of modules.
 checkList :: [Abs.Module] -> [Abs.Module]
