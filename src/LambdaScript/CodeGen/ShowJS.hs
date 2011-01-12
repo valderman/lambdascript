@@ -38,7 +38,7 @@ instance Show Exp where
   show (NoExp) =
     ""
   show x =
-    error $ "No Show instance for Exp: " ++ show x ++ "!"
+    error $ "No Show instance for some Exp!"
 
 instance Show Stmt where
   show (SelfThunk id ss) =
@@ -55,7 +55,7 @@ instance Show Stmt where
   show (Forever st)  = "for(;;) " ++ show st
   show (Break)       = "break;\n"
   show (NoStmt)      = ""
-  show x             = error $ "No Show instance for " ++ show x ++ "!"
+  show x             = error $ "No Show instance for some Stmt!"
 
 instance Show Oper where
   show Add = "+"
@@ -71,7 +71,7 @@ instance Show Oper where
   show Le  = "<="
   show Ge  = ">="
   show Ne  = "!="
-  show x   = error $ "No Show instance for " ++ show x ++ "!"
+  show x   = error $ "No Show instance for some operator!"
 
 instance Show Fun where
   show (FunIdent str)   = str
@@ -81,7 +81,7 @@ instance Show Fun where
     where
       numArgs (A.TOp _ t) = numArgs t + 1
       numArgs _           = 0
-  show x                = error $ "No Show instance for " ++ show x ++ "!"
+  show x                = error $ "No Show instance for some Fun!"
 
 instance Show Const where
   show (NumConst d)      = if snd (properFraction d) /= 0
@@ -92,4 +92,4 @@ instance Show Const where
   show (BoolConst True)  = "1"
   show (BoolConst False) = "0"
   show (EmptyListConst)  = "[0]"
-  show x                 = error $ "No Show instance for " ++ show x ++ "!"
+  show x                 = error $ "No Show instance for some Const!"
