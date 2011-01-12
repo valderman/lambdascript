@@ -18,11 +18,12 @@ infer as importTypes (Module exports is (Program defs)) =
     ((as', defs'), subst) ->
       let inferredFuncs = [id | BGroup (BindGroup bg) <- defs,
                                 ConstDef (Ident id) _ <- bg]
-      in if null $ exports' \\ inferredFuncs
-           then (Module exports is (annotate subst (Program defs')),
-                 as', types) 
-           else error $ "Trying to export nonexistent functions: "
-                      ++ intercalate ", " inferredFuncs
+      in case exports' \\ inferredFuncs of
+           [] ->
+             (Module exports is (annotate subst (Program defs')), as', types)
+           fs ->
+             error $ "Trying to export nonexistent functions: "
+                      ++ intercalate ", " fs
   where
     exports' =
       case exports of
