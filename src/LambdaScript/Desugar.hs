@@ -144,12 +144,12 @@ desuDoBlock stmts =
       -- This should have been a foldr, but since we had to inspect the last
       -- statement anyway we might as well reverse the list and to a foldl'
       -- on it instead.
-      foldl' desuStmt final rest
+      foldl' desuStmt (desuExpr final) rest
   where
     desuStmt next (DoArrow id ex) =
-      EApp (EApp (EVar $ VIdent "_bind") ex) (ELambda [PID id] next)
+      EApp (EApp (EVar $ VIdent "_bind") (desuExpr ex)) (ELambda [PID id] next)
     desuStmt next (JustDo ex) =
-      EApp (EApp (EVar $ VIdent "_bind") ex) (ELambda [PWildcard] next)
+      EApp (EApp (EVar $ VIdent "_bind") (desuExpr ex)) (ELambda [PWildcard] next)
 
 -- | Desugar a lambda expression; basically turns \a b -> ... into
 --   \a -> \b -> ...
