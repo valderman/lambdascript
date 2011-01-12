@@ -25,6 +25,7 @@ showT (TApp t1 t2)  = showT t1 ++ " (" ++ showT t2 ++ ")"
 showT (TTup (t:ts)) = "(" ++ foldl' (\a x -> a++","++showT x) (showT t) ts ++ ")"
 showT (TLst t)      = "[" ++ showT t ++ "]"
 showT (TGen n)      = "*" ++ show n
+showT (TUnt)        = "()"
 showT (TCon (TIdent c)) = c
 showT (TVar (VIdent v)) = v
 
@@ -35,7 +36,7 @@ enumId n = '*' : show n
 -- | All our basic types.
 tUnit, tChar, tInt, tDouble, tList, tArrow, tString :: Type
 tTuple :: Int -> Type
-tUnit    = TCon $ TIdent "()"
+tUnit    = TUnt
 tChar    = TCon $ TIdent "Char"
 tBool    = TCon $ TIdent "Bool"
 tInt     = num  $ TCon $ TIdent "*RealInt"
@@ -165,6 +166,8 @@ mgu (TVar v) t =
 mgu t (TVar v) =
   bind v t
 mgu (TCon c1) (TCon c2) | c1 == c2 =
+  return nullSubst
+mgu (TUnt) (TUnt) =
   return nullSubst
 mgu t1 t2 =
   fail $ "Types don't unify: " ++ showT t1 ++ " and " ++ showT t2

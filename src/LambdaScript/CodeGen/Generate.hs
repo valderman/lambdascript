@@ -214,6 +214,11 @@ genExpr (ETyped ex t) = genExpr' t ex
           ((), stmts) <- isolate $ function ex
           stmt $ Assign v (FunExp $ Lambda [] (Block stmts))
     
+    -- Both (), [] and all other nullary constructors share the representation
+    -- [0].
+    genExpr' t EUnit = do
+      return $ Ops.Const $ EmptyListConst
+    
     -- Catch-all for anything we might have forgotten to implement.
     genExpr' t ex =
       error $ "No codegen for expression:\n" ++ show ex

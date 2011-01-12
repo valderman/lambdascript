@@ -265,6 +265,8 @@ tiExpr as (EBinds ex defs) = do
   (as', defs') <- tiDefs as defs
   (_, ex') <- tiExpr as' ex
   return (as, eTyped (EBinds ex' defs') (eUntyped ex'))
+tiExpr as (EUnit) = do
+  return (as, eTyped EUnit tUnit)
 tiExpr _ ex =
   error $ "Not implemented - inferring expression: " ++ show ex
 
