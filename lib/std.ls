@@ -1,4 +1,4 @@
-export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined;
+export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length;
 
 data Maybe a = Nothing | Just a;
 
@@ -35,6 +35,10 @@ reverse = reverse' [] {
     reverse' acc (x:xs) = reverse' (x:acc) xs;
     reverse' acc _      = acc;
   };
+
+length :: [a] -> Int;
+length (x:xs) = 1 + length xs;
+length _      = 0;
 
 map :: (a -> b) -> [a] -> [b];
 map f (x:xs) = f x : map f xs;
