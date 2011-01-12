@@ -13,8 +13,17 @@ recompile() {
     echo
 }
 
+test_lib() {
+    echo "Building all libs for sanity check..."
+    for f in $(ls lib | egrep '\.ls$') ; do
+      ./lsc "$f" > /dev/null 2> /dev/null
+    done
+}
+
 test_all() {
     recompile
+
+    test_lib
 
     # Remove results of previous test runs
     echo "" | tee failed-good failed-bad
