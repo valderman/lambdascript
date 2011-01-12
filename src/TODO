@@ -1,8 +1,4 @@
-* We can't have monads in general since we don't have type classes, but can we
-  have just a specific IO monad and perhaps some syntactic sugar? YES WE CAN!
-* Remove laziness where it's unwanted. Or at least make an attempt.
 * Optimize calls between JS and LS; it's REALLY slow ATM. Since _jsfun will
   pretty much always be called with a string literal, we could just inline the
   call to it in 9 cases out of 10.
-* Syntactic sugar for monadic IO.
 * Restrict type imports/exports (see Make.hs for details.)
