@@ -39,6 +39,7 @@ make cfg = do
                    s  -> s
       libpath = inputdir : extraLibDirs cfg ++ [libDir cfg]
   (names, mods) <- buildModList fp libpath forcedName >>= return . unzip
+  
   -- Create a module => exported functions mapping.
   -- If a module lacks an export statement, export nothing to othermodules.
   -- However, EVERYTHING is later exported to the user.
@@ -50,6 +51,7 @@ make cfg = do
       imports = map (mkImpList exports) mods
       mods' = zipWith3 genModule names imports (checkList mods)
   writeBundle (output cfg ++ ".js") (libDir cfg) mods'
+  
   where
     -- Create the list of imports for the given module.
     mkImpList es (Module _ is _) =

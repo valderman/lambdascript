@@ -8,7 +8,10 @@ import Data.List (foldl')
 -- | Generate the constructor -> ID mapping for a typedef.
 typeMap :: NewType -> M.Map String ConstrID
 typeMap (NewType _ _ cs) =
-  M.fromList $ zip (map (\(Constructor (TIdent id) _) -> id) cs) [0..]
+  M.fromList $ zipWith fixIO (map (\(Constructor (TIdent id) _) -> id) cs) [0..]
+  where
+    fixIO "IO" n = ("IO", -1)
+    fixIO id n   = (id, n)
 
 -- | Generate the constructor -> ID mapping for all typedefs.
 allTypesMap :: Program -> M.Map String ConstrID

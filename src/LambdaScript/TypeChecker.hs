@@ -13,8 +13,7 @@ import LambdaScript.Annotate
 --   expression.
 infer :: Assumps -> [NewType] -> Module -> (Module, Assumps, [NewType])
 infer as importTypes (Module exports is (Program defs)) =
-  case runTCM $ tiDefs (B.assumptions ++ as)
-                       (map TypeDef (B.types ++ importTypes) ++ defs) of
+  case runTCM inferDefs of
     ((as', defs'), subst) ->
       let inferredFuncs = [id | BGroup (BindGroup bg) <- defs,
                                 ConstDef (Ident id) _ <- bg]
@@ -25,10 +24,18 @@ infer as importTypes (Module exports is (Program defs)) =
              error $ "Trying to export nonexistent functions: "
                       ++ intercalate ", " fs
   where
+    -- Infer everything, yay.
+    inferDefs =
+      tiDefs (B.assumptions ++ as)
+             (map TypeDef (B.types ++ importTypes) ++ defs)
+
+    -- Our list of exports as a list of identifiers.
     exports' =
       case exports of
         (Exports ex) -> map (\(Export (VIdent id)) -> id) ex
         _            -> []
+
+    -- All locally defined types.
     types =
       [t | (TypeDef t) <- defs]
 
