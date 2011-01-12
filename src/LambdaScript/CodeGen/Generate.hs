@@ -6,9 +6,11 @@ import LambdaScript.CodeGen.Errors
 import LambdaScript.CodeGen.Module
 import LambdaScript.CodeGen.GenTypes
 import qualified Data.Map as M
-import Data.List (foldl1', foldl')
+import Data.List (foldl1', foldl', unfoldr)
 import Control.Monad (foldM)
 import qualified LambdaScript.Builtins as Builtin
+
+import System.IO.Unsafe
 
 -- | Generate code for all functions in a program. Takes a list of imports and
 --   a program to generate code for as its arguments.
@@ -81,6 +83,7 @@ nargs (ETyped _ t) = nargs' t
     nargs' (TOp _ t) = 1+nargs' t
     nargs' _         = 0
 
+-- | Generate code for an expression.
 genExpr :: Expr -> CG Exp
 genExpr (ETyped ex t) = genExpr' t ex
   where
@@ -114,6 +117,8 @@ genExpr (ETyped ex t) = genExpr' t ex
       f' <- genExpr f
       x' <- genExpr x
       return $ Call (nargs f-1) f' [thunk x']
+      where
+        
 
     -- Various combinators for expressions.
     genExpr' t (EList (ex:exs)) = do
@@ -194,10 +199,23 @@ genExpr (ETyped ex t) = genExpr' t ex
     -- Case expression; works pretty much like a lambda with an arbitrary
     -- number of bodies. (See also: recursive documentation)
     genExpr' t (ECase ex cps) = do
-      ex' <- genExpr ex
+      -- If we have any expression more complex than an identifier, we need to
+      -- evaluate it beforehand and use a temp var instead.
+      ex' <- preEvalComplexExpr ex
       v <- newStrict
       genCPs ex' v cps >>= stmt . Forever
       return $ eval $ Ops.Ident v
+      where
+        preEvalComplexExpr ex@(ETyped (EVar _) _) =
+          genExpr ex
+        preEvalComplexExpr ex@(ETyped (ETuple _) _) =
+          genExpr ex
+        preEvalComplexExpr ex = do
+          ex' <- genExpr ex
+          v <- newStrict
+          stmt $ Assign v ex'
+          return $ Ops.Ident v
+          
 
     -- Bindings; we just generate them and assign them to local vars.
     genExpr' t (EBinds ex defs) = do
