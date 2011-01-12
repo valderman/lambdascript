@@ -11,14 +11,15 @@ functions =
   BGroup $ BindGroup $ flip map defs $ \(name, t) ->
     ConstDef (Ident name) (ETyped (EConstr $ TIdent "()") t)
 
-theVars = map VIdent ["a"]
+theVars = map VIdent ["a", "b"]
 
 defs :: [(ID, Type)]
 defs = [
     ("()",      tUnit),
     ("error",   tString ~> tv "a"),
     ("_jsfun",  tString ~> tInt ~> tv "a"),
-    ("_export", tInt ~> tv "a" ~> mkADT (TIdent "JSFun") [])
+    ("_export", tInt ~> tv "a" ~> mkADT (TIdent "JSFun") []),
+    ("$bind",   io (tv "a") ~> (tv "a" ~> io (tv "b")) ~> io (tv "b"))
   ]
 
 types :: [NewType]

@@ -111,6 +111,23 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (EStr s) = do
       return . Ops.Const . strConst $ s
     
+    -- Function application of the monadic bind operator; special handling for
+    -- performance reasons.
+    genExpr' t (EApp (ETyped (EApp (ETyped (EVar (VIdent "$bind")) _) ex) _) next) = do
+      ex' <- genExpr ex
+      case next of
+        -- A lambda that cares about its argument; that's 'x <- m'
+        ETyped (ELambda [PTyped (PID (VIdent id)) _] next') _ -> do
+          v <- newVar
+          bind id v
+          stmt $ Assign v (Index ex' $ Ops.Const $ NumConst $ 1)
+          genExpr next'
+        -- A lambda that throws away its argument; that's just 'm'
+        ETyped (ELambda [PTyped PWildcard _] next') _ -> do
+          stmt $ ExpStmt ex'
+          genExpr next'
+        x -> error $ "WHAT?\n\n" ++ show x ++ "\n\n"
+
     -- Function application; generate code to obtain the function and to obtain
     -- the argument, then apply the function to the thunked argument.
     genExpr' t (EApp f x) = do

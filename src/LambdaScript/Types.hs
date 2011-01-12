@@ -51,6 +51,10 @@ tString  = list tChar
 mkADT :: TIdent -> [VIdent] -> Type
 mkADT id vs = foldl' TApp (TCon id) (map TVar vs)
 
+-- | Create an IO type.
+io :: Type -> Type
+io t = TApp (TCon (TIdent "IO")) t
+
 -- | Create an aggregate type.
 (~>) :: Type -> Type -> Type
 f ~> x = f `TOp` x

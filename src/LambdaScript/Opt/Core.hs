@@ -65,6 +65,9 @@ optS o (Forever s) =
 optS o Break =
   optStm o Break
 
+optS o (ExpStmt ex) =
+  optStm o (ExpStmt $ optE o ex)
+
 optS o NoStmt =
   NoStmt
 

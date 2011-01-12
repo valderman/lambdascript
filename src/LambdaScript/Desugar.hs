@@ -147,9 +147,9 @@ desuDoBlock stmts =
       foldl' desuStmt (desuExpr final) rest
   where
     desuStmt next (DoArrow id ex) =
-      EApp (EApp (EVar $ VIdent "_bind") (desuExpr ex)) (ELambda [PID id] next)
+      EApp (EApp (EVar $ VIdent "$bind") (desuExpr ex)) (ELambda [PID id] next)
     desuStmt next (JustDo ex) =
-      EApp (EApp (EVar $ VIdent "_bind") (desuExpr ex)) (ELambda [PWildcard] next)
+      EApp (EApp (EVar $ VIdent "$bind") (desuExpr ex)) (ELambda [PWildcard] next)
 
 -- | Desugar a lambda expression; basically turns \a b -> ... into
 --   \a -> \b -> ...

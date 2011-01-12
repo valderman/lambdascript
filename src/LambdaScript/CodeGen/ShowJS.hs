@@ -55,6 +55,7 @@ instance Show Stmt where
   show (Forever st)  = "for(;;) " ++ show st
   show (Break)       = "break;\n"
   show (NoStmt)      = ""
+  show (ExpStmt ex)  = show ex ++ ";\n"
   show x             = error $ "No Show instance for some Stmt!"
 
 instance Show Oper where

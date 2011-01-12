@@ -39,6 +39,7 @@ data Stmt
   | Return  Int Exp
   | Block   [Stmt]
   | Forever Stmt
+  | ExpStmt Exp
   | Break
   | NoStmt
 
