@@ -1,4 +1,4 @@
-export return, alert, setTimeout;
+export return, alert, setTimeout, mapM;
 
 -- Opaque data type representing a javascript funvtion.
 data JSFun = JSFun;
@@ -20,3 +20,11 @@ setTimeout f n = do {
     case _jsfun "window.setTimeout" 2 (_export 0 f) n of
       [] -> return ();;
   };
+
+mapM :: (a -> IO b) -> [a] -> IO [b];
+mapM f (x:xs) = do {
+    x' <- f x;
+    xs' <- mapM f xs;
+    return (x':xs');
+  };
+mapM _ _ = return [];
