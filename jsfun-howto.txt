@@ -1,0 +1,44 @@
+** How to write JS-interfacing functions using _jsfun **
+
+_jsfun is basically an interface to raw JS; it takes two mandatory arguments,
+a string representing an arbitrary JS expression, and an integer representing
+the arity of the expression. After that, the arguments to the expression are
+given.
+
+If we want to create an LS equivalent to alert(), we'd write:
+alert :: String -> IO ();
+alert text =
+  case _jsfun "alert" 1 text of
+    [] -> return ();
+    ;
+
+Why the case expression? Well, the function returned by _jsfun needs to be
+evaluated. Since those functions can contain side effects, they should be
+evaluated immediately. The empty list is what the runtime returns to LS
+when it got served an undefined JS value.
+
+If we wanted a prompt() equivalent:
+prompt :: String -> IO String;
+prompt question =
+  case _jsfun "prompt" 1 question of
+    (c:s) -> return (c:s);
+    ;
+
+Note the need to match on (c:s) rather than just x, _ or something else,
+since binding to an identifier or matching a wildcard doesn't force evaluation
+of anything.
+
+What if we want JS to be able to call us back? Use _export; it takes an
+integer as its first parameter and a function as its second. The integer gives
+the arity of the function. For example we can create an interface to
+window.setTimeout like this:
+setTimeout :: IO () -> Int -> IO ();
+setTimeout f n =
+  case _jsfun "window.setTimeout" 2 (_export 0 f) n of
+    [] -> return ();
+    ;
+
+
+Finally, since the type of _jsfun is pretty much a huge hole in the type
+system, it's critical that you explicitly specify the correct types of your
+_jsfun-using functions.

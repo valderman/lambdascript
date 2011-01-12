@@ -16,11 +16,11 @@ return = IO;
 
 -- Javascript alert.
 alert :: a -> IO ();
-alert s = _jsfun "alert" 1 s;
+alert s = case _jsfun "alert" 1 s of [] -> return ();;
 
 -- Javascript window.setTimeout.
 setTimeout :: IO () -> Int -> IO ();
 setTimeout f n = do {
-    _jsfun "window.setTimeout" 2 (_export 0 f) n;
-    return ();
+    case _jsfun "window.setTimeout" 2 (_export 0 f) n of
+      [] -> return ();;
   };
