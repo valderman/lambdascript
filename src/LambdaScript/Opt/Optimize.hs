@@ -13,6 +13,7 @@ import LambdaScript.Opt.Uncurry as U
 import LambdaScript.Opt.FoldCalls
 import LambdaScript.Opt.ClosuresFromFoldedCalls
 import LambdaScript.Opt.UnThunkFunc
+import LambdaScript.Opt.InlineReturn
 
 -- | The list of optimizations to apply to the list of functions. Optimizations
 --   are applied from left to right.
@@ -29,7 +30,8 @@ opts = [
     U.uncurry,
     foldCalls,
     closuresFromFolded,-}
-    unEvalGlobals
+    unEvalGlobals,
+    inlineReturn
   ]
 
 -- | Apply optimizations to the functions.
