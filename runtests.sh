@@ -16,7 +16,11 @@ recompile() {
 test_lib() {
     echo "Building all libs for sanity check..."
     for f in $(ls lib | egrep '\.ls$') ; do
-      ./lsc "$f" > /dev/null 2> /dev/null
+        if ./lsc "lib/$f" > /dev/null 2> /dev/null ; then
+            echo -n # All's well!
+        else
+            echo "Building $f failed miserably!"
+        fi
     done
 }
 
@@ -55,7 +59,7 @@ test_all() {
 		echo "$f" >> failed-good
 	    fi
 	else
-            echo "Failed to compile: $f"
+        echo "Failed to compile: $f"
 	    echo "$f" >> failed-good
 	fi
     done
