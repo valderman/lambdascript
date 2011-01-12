@@ -42,7 +42,7 @@ test_all() {
         oracle=tests/oracles/$(basename $(echo $f | sed -e 's/\(\\*\).ls$/\1.js/'))
 	    if [ -e $oracle ] ; then
 		oracleres=$(cat $oracle)
-		result=$(js $jsfile)
+		result=$(js $jsfile 2> /dev/null)
 		if [ "$oracleres" == "$result" ] ; then
 		    let goodpassed=$goodpassed+1
 		else
