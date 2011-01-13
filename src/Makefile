@@ -12,6 +12,11 @@ all: .compiler
 	make -C LambdaScript .lexer
 	touch .bnfc
 
+doc:
+	mkdir -p ../docs/haddock
+	haddock --ignore-all-exports --odir=../docs/haddock -h Main.hs
+
+
 clean:
 	find . -name '*.hi' -exec rm \{\} \;
 	find . -name '*.o' -exec rm \{\} \;
