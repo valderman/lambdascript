@@ -177,7 +177,7 @@ genExpr (ETyped ex t) = genExpr' t ex
       a' <- genExpr a
       b' <- genExpr b
       -- ++ is also a function, so thunk the args.
-      return $ Call 0 (FunExp $ FunIdent "_conc") [thunk a', thunk b']
+      return $ Call 0 (FunExp $ FunIdent "$conc") [thunk a', thunk b']
     
     -- Loooooong list of binary operators; boring!
     genExpr' t (EAnd a b) = oper And a b
