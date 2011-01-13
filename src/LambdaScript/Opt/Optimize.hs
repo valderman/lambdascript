@@ -9,9 +9,9 @@ import LambdaScript.Opt.NoObviousIfs
 import LambdaScript.Opt.ZapArrays
 import LambdaScript.Opt.ReduceBlocks
 import LambdaScript.Opt.NoUselessAssigns
-import LambdaScript.Opt.Uncurry as U
-import LambdaScript.Opt.FoldCalls
-import LambdaScript.Opt.ClosuresFromFoldedCalls
+-- import LambdaScript.Opt.Uncurry as U
+-- import LambdaScript.Opt.FoldCalls
+-- import LambdaScript.Opt.ClosuresFromFoldedCalls
 import LambdaScript.Opt.UnThunkFunc
 import LambdaScript.Opt.InlineReturn
 
