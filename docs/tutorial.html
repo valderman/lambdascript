@@ -1,0 +1,214 @@
+<html>
+<head>
+<title>LambdaScript tutorial - Learn to be Awesome!</title>
+</head>
+<body>
+<h1>LambdaScript tutorial - learn to be awesome!</h1>
+
+<h2>About this tutorial</h2>
+<p>
+This document is intended as a short introduction to LS. It does not cover general topics of functional programming such as partial application, higher order functions, etc.; go look it up on Wikipedia. Also, go read a good Haskell tutorial, since LS is very similar to Haskell. http://www.learnyousomehaskell.com is strongly recommended.
+<p>
+
+<h2>Hello World!</h2>
+
+<p>
+As is traditional, let's start out with writing a Hello World-program:
+</p>
+
+<pre>
+import io;
+hello = alert "Hello World!";
+</pre>
+
+<p>
+Save the program as tutorial.ls and compile it:
+</p>
+<pre>
+$ ./lsc tutorial.ls
+</pre>
+<p>
+Then create a HTML document with the following contents and save it as tutorial.html:
+</p>
+<pre>
+&lt;html&gt;&lt;head&gt;&lt;script src="a.out.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+tutorial.hello();
+&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+
+<p>
+Open tutorial.html in a web browser; lo and behold, you've written your first LambdaScript program!
+</p>
+<p>
+When writing LS programs, you are not writing a program that will run from start to finish. Rather, you're writing a collection of functions that can be called independently of each other from Javascript code on a web page; this is why we have to create an HTML document.
+</p>
+<p>
+As you can see from the example, LambdaScript functions are called from Javascript as &lt;module&gt;.&lt;function&gt;(arg1, arg2, ...) with the module name being the same as the name of your .ls-file. You can, however, override the module name:
+</p>
+<pre>
+$ ./lsc -mfoo tutorial.ls
+</pre>
+<p>
+This will compile tutorial.ls, forcing the module name to 'foo'. Thus, you'd call the hello function as foo.hello().</p>
+<p>
+By default, lsc saves its output to a.out.ls. You can change the output file to anything you like using the -o option:
+</p>
+<pre>
+$ ./lsc -ofoo tutorial.ls
+</pre>
+<p>
+This will save the compiled bundle to foo.js instead of a.out.js. The -o option has no effect on the module name though, so you'd still call your hello function as tutorial.hello().
+</p>
+<p>
+For more useful command line arguments to lsc, check out ./lsc --help.
+</p>
+<h2>Pattern matching</h2>
+<p>
+LambdaScript has two ways of pattern matching: directly in function definitions, or in a case-expression. Let's look at a function pattern match first:
+</p>
+<pre>
+sum 0 = 0;
+sum n = sum (n + 1);
+</pre>
+<p>
+The sum function sums all numbers between 0 and n. Assuming you typed it into tutorial.ls and compiled it, you can try it out by calling it from tutorial.html:
+</p>
+<pre>
+alert(tutorial.sum(100));
+</pre>
+<p>
+The pattern matching here should be read as "if the argument is equal to zero, then return zero; otherwise, call the argument n and return n + sum (n-1)." You could also to the same with a case-expression:
+</p>
+<pre>
+sum n = case n of
+          0 -> 0;
+          x -> x + sum x;
+          ;
+</pre>
+<p>
+Note the extra semicolon at the end of the function; all function definitions end with a semicolon, but so do all of the cases in a case expression, so we have to use two semicolons like this when a case expression is at the end of a function.
+</p>
+<p>
+You can also use something called "guards" in your patterns, to add more conditions:
+</p>
+<pre>
+powerLevel 0             = "it's zero";
+powerLevel n | n < 100   = "it's below 100";
+             | n < 1000  = "it's below 1000";
+             | n <= 9000 = "it's really high";
+powerLevel _             = "IT'S OVER NINE THOUSAND!";
+</pre>
+<p>
+The first line here matches the given power level with zero and returns "it's zero" if it's exactly equal to zero. The second line matches any value and names the value "n," but then goes on to add additional restrictions in the form of boolean expressions. The final line means "match anything." These cases are matched from top to bottom, and the first one to match gets returned. Of course, you can use guards in case expressions too:
+</p>
+<pre>
+foo x = case x + 10 of
+          n | n < 10 -> "x is negative";
+            | True   -> "x is positive";
+</pre>
+<h2>Local bindings</h2>
+<p>
+There are no mutable variables in LambdaScript, but you can assign names to expressions:
+</p>
+<pre>
+foo = alert x {
+          x = 1 + 2;
+        };
+</pre>
+<p>
+The brackets should be read as "perform the name-expression assignments within the brackets, then evaluate the expression before the brackets." In this case, the brackets apply to the entire expression "alert x" since brackets have very low priority.
+</p>
+<h2>Lists</h2>
+<p>
+The basic collection data type in LambdaScript is the linked list. Here's how you create one, and how you extract elements from it:
+</p>
+<pre>
+emptyList = [];
+listLiteral = [1, 2, 3];
+prependXToList x list = x : list;
+returnFirstElementOfList (x:xs) = x;
+</pre>
+<p>
+The : ("cons") operator creates a list by prepending the first operand to the second, which must of course be a list. As you can see, you can also use it to deconstruct a list; when pattern matching on (x:xs) the first element of the list you're matching against gets the name "x" and the rest of the list gets the name "xs."
+</p>
+<h2>Custom data types</h2>
+<p>
+You can also create your own data types in LambdaScript. Data types consist of one or more constructors, each of which takes zero or more arguments. Constructors must have names starting with a capital letter. Here's how you'd create a binary tree:
+</p>
+<pre>
+data Tree a
+  = Node a, (Tree a), (Tree a)
+  | Leaf
+  ;
+</pre>
+<p>
+This creates a binary tree that can have any type of content. "Tree a" means "a type Tree which can hold values of type a, where a is a type variable and thus can be any type." The type has the constructors Node and Leaf. Node takes three arguments, the first having type a, and the second and third having type Tree a; Leaf takes no arguments and servers as the "bottom" or "end" of the tree. We can use pattern matching to manipulate the tree;
+</p>
+<pre>
+isEmpty (Leaf) = True;
+isEmpty _      = False;
+
+hasLeftChild (Node _ Leaf _) = False;
+hasLeftChild _               = True;
+
+insert elem (Node x left right)
+  | elem > x = Node x left (insert elem right);
+  | elem < x = Node x (insert elem left) right;
+  | True     = Node elem left right;
+insert elem (Leaf) = Node elem Leaf Leaf;
+</pre>
+<p>
+Just like we can pick apart a list into its constituent parts by pattern matching on (x:xs) we can pick apart a constructor by matching on (ConstructorName arg1 arg2 arg3 ...). It's important to note that when pattern matching on constructors, the constructor and its arguments must be inside parentheses (like (Node x left right) or (Leaf),) even if the constructor takes no arguments.
+</p>
+<h2>Imports and exports</h2>
+<p>
+Since LambdaScript is based on creating modules, it'd be silly if we couldn't import or export functions from/to other modules.
+</p>
+<pre>
+export foo, greet;
+import io;
+
+foo = alert "foo";
+
+greet name title =
+  alert greeting {
+      greeting = "Hello " ++ title ++ " " ++ name ++ ", how do you do?";
+    };
+</pre>
+<p>
+"import io;" means that we want to use functions from the module io, in this case the alert function. "export foo, greet;" means that we want to make the functions foo and greet available to other LambdaScript modules and Javascript callers. If we don't specify an exports line, none of our functions will be available to other LambdaScript modules, but ALL of them will be available to Javascript callers.
+</p>
+<p>
+This example also makes use of the ++ operator, which is used to concatenate two lists. Since strings in LambdaScript are really lists of characters, it's also used as the string concatenation operator.
+</p>
+<h2>Advanced topics</h2>
+<p>
+In LambdaScript, you can partially apply functions. That is, if you have a function that takes three arguments, you can call it using only two and get back a function that accepts the remaining argument and finally makes that call. You can also pass a function as an argument to another function. You can also create anonymous functions, so-called "lambdas."
+</p>
+<pre>
+import std;
+
+applyFToX f x = f x;
+
+square = (\x -> x*x);
+
+squareEveryElement = map square;
+
+oneFourNine = squareEveryElement [1, 2, 3];
+</pre>
+<p>
+applyFToX takes a function as its first argument and an arbitrary value as its second. It returns the result of calling the function with the arbitrary value as its argument.
+</p>
+<p>
+square is a function that takes one argument and squares it. However, we've written it in a pretty wacky way. When writing (\x -> x*x) we really mean "create a function that takes one argument, x, and multiplies that argument by itself." We could as well have written the square function as <i>square x = x*x;</i> but then we wouldn't have gotten to show how to create an anonymous function. Of course, you can create anonymous functions with any number of arguments: <i>(\x y z -> x + y + z)</i>
+</p>
+<p>
+squareEveryElement is a little more complex; it uses both higher order functions and partial application. The function map takes two arguments, a function and a list, and applies the function to every element of the list. In our example we call map with only one argument, a function, and get back a function that takes one argument, a list. That function, when called, applies the function we gave as the only argument to map (that is, the square function) to each element in the list. If we apply squareEveryElement to the list [1, 2, 3], we get back [square 1, square 2, square 3] which is the same as [1, 4, 9].
+</p>
+</body>
+</html>
