@@ -59,10 +59,11 @@ type NamedFunction = (String, [Var], Stmt)
 
 -- | Constants
 data Const
-  = NumConst  Double -- All numbers are doubles in ECMAScript
-  | CharConst Char
-  | StrConst  String
-  | BoolConst Bool
+  = NumConst       Double -- All numbers are doubles in ECMAScript
+  | CharConst      Char
+  | StrConst       String
+  | InlineStrConst String
+  | BoolConst      Bool
   | EmptyListConst
 
 strConst :: String -> Const

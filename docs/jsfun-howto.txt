@@ -1,5 +1,6 @@
 ** How to write JS-interfacing functions using _jsfun **
 
+
 _jsfun is basically an interface to raw JS; it takes two mandatory arguments,
 a string representing an arbitrary JS expression, and an integer representing
 the arity of the expression. After that, the arguments to the expression are
@@ -39,6 +40,29 @@ setTimeout f n =
     ;
 
 
+
+
+** Limitations of _jsfun **
+
+_jsfun isn't meant to be thrown around and used all over the place, but rather
+as a controlled means of bringing JS and DOM interaction to LS. As such, its
+use comes with several restrictions that does not apply to normal LS
+functions.
+
+Can NOT be partially applied. If you want to do that then you have to create
+your own call-specific wrapper:
+someCall x y z = _jsfun "someCall" 3 x y z;
+_jsfun isn't meant thrown around, but as an extremely controlled way of
+bringing I/O to LS. Thus it doesn't really make sense to take any pains to
+ensure _jsfun can do the same functional acrobatics as other functions.
+
+_jsfun will also evaluate all of its arguments when invoked, since the JS
+function you're calling doesn't know about thunks. Thus, the following call
+will always throw an error even though the argument is never actually used:
+_jsfun "someFunctionThatDoesntUseItsArgument" 1 undefined;
+
+At present, JS functions returned by _jsfun can not be called by LS programs.
+
 Finally, since the type of _jsfun is pretty much a huge hole in the type
 system, it's critical that you explicitly specify the correct types of your
-_jsfun-using functions.
+_jsfun-using.

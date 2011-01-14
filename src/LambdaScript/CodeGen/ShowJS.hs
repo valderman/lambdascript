@@ -85,12 +85,13 @@ instance Show Fun where
   show x                = error $ "No Show instance for some Fun!"
 
 instance Show Const where
-  show (NumConst d)      = if snd (properFraction d) /= 0
-                              then show d
-                              else show (truncate d)
-  show (CharConst c)     = ['\'', c, '\'']
-  show (StrConst s)      = "_s(" ++ show s ++ ")"
-  show (BoolConst True)  = "1"
-  show (BoolConst False) = "0"
-  show (EmptyListConst)  = "[0]"
-  show x                 = error $ "No Show instance for some Const!"
+  show (NumConst d)       = if snd (properFraction d) /= 0
+                               then show d
+                               else show (truncate d)
+  show (CharConst c)      = ['\'', c, '\'']
+  show (StrConst s)       = "_s(" ++ show s ++ ")"
+  show (InlineStrConst s) = s
+  show (BoolConst True)   = "1"
+  show (BoolConst False)  = "0"
+  show (EmptyListConst)   = "[0]"
+  show x                  = error $ "No Show instance for some Const!"
