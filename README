@@ -14,15 +14,24 @@ and nicer syntax.
 ** Building & dependencies
 
 To build the Lambdascript compiler (lsc,) simply run 'make' in the project's
-root directory.
+root directory; to run the test suite, 'make test' and to build the
+documentation 'make doc'.
 
-In order to compile LS, you need bnfc (get it from
-http://code.haskell.org/bnfc/ or through your system's package manager if
-you're on Debian or any of its derivatives.)
+In order to compile LS, you need GHC, BNFC, Happy and Alex; the Haskell
+compiler, parser generator generator, parser generator and lexer generator
+respectively.
+
+GHC, Happy and Alex are all included in the Haskell platform, available from
+http://hackage.haskell.org/platform/ and BNFC can be found at
+http://hackage.haskell.org/package/BNFC.
 
 In order to run the test suite, you need spidermonkey installed. That's also
 handily available from your package manager if you're on Debian with
-derivatives.
+derivatives, and you might also want to install Haddock (which is also
+included in the Haskell platform) so you can build the documentation.
+
+On Debian with derivatives, you can install everything you need by issuing:
+# apt-get install haskell-platform bnfc spidermonkey-bin
 
 
 ** Compiling & running programs
@@ -30,22 +39,17 @@ derivatives.
 To compile a Lambdascript program into Javascript, run the compiler (lsc) in
 the root directory of the project with the input file as its only argument:
 $ ./lsc some/lambdascript/input/file.ls
-The corresponding output file, for this example file.js, will be created in
+The output file, a.out.js if nothing else is specified, will be created in
 your working directory.
 
-At the moment, running lsc from another directory is not possible, the reason
-being that lsc looks for the LS runtime library in lib/runtime.js.
+If you want to run lsc from another directory, you need to specify the path
+where runtime.js can be found using the -L switch:
+$ ./some/dir/lsc myfile.ls -Lsome/dir/lib
 
 To run your newly compiled program, include it in an HTML document using the
-<script> tag and call its functions from another <script> tag. At the moment,
-certain special care must be taken with the parameters.
+<script> tag and call its functions from another <script> tag. The functions
+are members of an object with the same name as the file you compiled.
+If you compile foo.ls containing the function bar :: Int -> Int -> Int, you
+would call it from JS as foo.bar(1, 2).
 
-Let's assume you have the LS function foo :: Int -> Int -> Int. You would call
-it from JS as follows:
-foo()(1)(2);
-The identifier foo is a thunk; a suspended computation. To actually perform
-that computation and get its value (in this case the foo function) we must
-evaluate it, which is done by calling it as a nullary function.
-When we evaluate it, we get back a lambda expression like \x -> \y -> ...
-which should explain why we call it not as a binary function but as a
-function returning another function; because that's what it is.
+See docs/tutorial.html for more information about using LambdaSript.
