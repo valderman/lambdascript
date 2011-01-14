@@ -7,6 +7,9 @@ test:
 failed:
 	./runtests.sh --failed
 
+example:
+	make -C examples/scroller
+
 doc:
 	make -C src doc
 
