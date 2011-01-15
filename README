@@ -17,9 +17,10 @@ To build the Lambdascript compiler (lsc,) simply run 'make' in the project's
 root directory; to run the test suite, 'make test' and to build the
 documentation 'make doc'.
 
-In order to compile LS, you need GHC, BNFC, Happy and Alex; the Haskell
-compiler, parser generator generator, parser generator and lexer generator
-respectively.
+In order to compile LS, you need GHC, BNFC 2.2 (BNFC 2.4b produces a parser
+that refuses to parse data type declarations or function definitions - the
+cause is unclear,) Happy and Alex; the Haskell compiler, parser generator
+generator, parser generator and lexer generator respectively.
 
 GHC, Happy and Alex are all included in the Haskell platform, available from
 http://hackage.haskell.org/platform/ and BNFC can be found at
