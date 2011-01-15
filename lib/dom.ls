@@ -1,21 +1,21 @@
 -- This is basically a wrapper for the more useful DOM manipulation functions.
 export getElementById, parentNode, getAttr, setAttr, firstChild, lastChild,
-       nextSibling, prevSibling, childNodes, siblings;
+       nextSibling, prevSibling, childNodes, siblings, domElemValid;
 import io;
 import std;
 
 data DOMElement = DOMElement;
 
 -- Checks whether the given value, received from JS, is not null.
-notNull :: a -> Bool;
-notNull x = _jsfun "(function(x) {return x;})" 1 x;
+domElemValid :: a -> Bool;
+domElemValid x = _jsfun "(function(x) {return x;})" 1 x;
 
 -- document.getElementById wrapper
 getElementById :: String -> IO (Maybe DOMElement);
 getElementById id = do {
       case _jsfun "(function (id) {var x = document.getElementById(id); return x ? x : 0;})" 1 id of
-        x | notNull x -> return (Just x);
-          | otherwise -> return Nothing;
+        x | domElemValid x -> return (Just x);
+          | otherwise      -> return Nothing;
         ;
   };
 
@@ -39,40 +39,40 @@ setAttr e attr s = do {
 parentNode :: DOMElement -> IO DOMElement;
 parentNode e =
   case _jsfun "(function(e) {return e.parentNode;})" 1 e of
-    x | notNull x -> return x;
-    _             -> error "parentNode: element has no parent!";
+    x | domElemValid x -> return x;
+    _                  -> error "parentNode: element has no parent!";
     ;
 
 -- Wrapper for <element>.nextSibling
 nextSibling :: DOMElement -> IO (Maybe DOMElement);
 nextSibling e =
   case _jsfun "(function(e) {return e.nextSibling;})" 1 e of
-    x | notNull x -> return (Just x);
-    _             -> return Nothing;
+    x | domElemValid x -> return (Just x);
+    _                  -> return Nothing;
     ;
 
 -- Wrapper for <element>.previousSibling
 prevSibling :: DOMElement -> IO (Maybe DOMElement);
 prevSibling e =
   case _jsfun "(function(e) {return e.previousSibling;})" 1 e of
-    x | notNull x -> return (Just x);
-    _             -> return Nothing;
+    x | domElemValid x -> return (Just x);
+    _                  -> return Nothing;
     ;
 
 -- Wrapper for <element>.firstChild
 firstChild :: DOMElement -> IO (Maybe DOMElement);
 firstChild e =
   case _jsfun "(function(e) {return e.firstChild;})" 1 e of
-    x | notNull x -> return (Just x);
-    _             -> return Nothing;
+    x | domElemValid x -> return (Just x);
+    _                  -> return Nothing;
     ;
 
 -- Wrapper for <element>.lastChild
 lastChild :: DOMElement -> IO (Maybe DOMElement);
 lastChild e =
   case _jsfun "(function(e) {return e.lastChild;})" 1 e of
-    x | notNull x -> return (Just x);
-    _             -> return Nothing;
+    x | domElemValid x -> return (Just x);
+    _                  -> return Nothing;
     ;
 
 -- Wrapper for <element>.childNodes

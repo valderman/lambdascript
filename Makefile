@@ -9,6 +9,7 @@ failed:
 
 example:
 	make -C examples/scroller
+	make -C examples/gradient
 
 doc:
 	make -C src doc
