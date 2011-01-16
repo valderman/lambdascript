@@ -39,4 +39,4 @@ instance Show Module where
       "}\n" ++ name ++ " = new _" ++ name ++ "();\n"
     where
       export f =
-        "$." ++ f ++ " = _exp($._" ++ f ++ ");\n"
+        "$['" ++ f ++ "'] = _exp($._" ++ f ++ ");\n"
