@@ -26,22 +26,32 @@ emptyField :: [[Maybe Color]];
 emptyField = replicate 20 (replicate 10 Nothing);
 
 -- The main game loop.
-main :: [[Maybe Color]] -> Canvas -> IO ();
-main field can = do {
-    draw can (Group pink 0 (3, 3) line) field;
-  };
+main :: [[Maybe Color]] -> Group -> Canvas -> IO ();
+main field group can =
+    case update group field of
+      (group', field') -> do {
+        draw can group' field';
+      };
+      ;
+
+update :: Group -> [[Maybe Color]] -> (Maybe Group, [[Maybe Color]]);
+update g f = (Just g, f);
 
 -- Infinite list, increasing by steps of blockSize from 0.
 coords :: [Int];
 coords = 0 : map (\x -> x+blockSize) coords;
 
 -- Draw the entire playing field.
-draw :: Canvas -> Group -> [[Maybe Color]] -> IO ();
+draw :: Canvas -> Maybe Group -> [[Maybe Color]] -> IO ();
 draw can grp lines = do {
     sequence_ (zipWith (drawLine can) coords lines);
-    drawGroup can grp;
+    case grp of
+      (Just grp') -> drawGroup can grp';
+      _           -> return ();
+      ;
   };
 
+-- Draw a group of falling blocks.
 drawGroup :: Canvas -> Group -> IO ();
 drawGroup can (Group c n (x, y) cs) = do {
     mapM (\(x', y') -> drawBlock can (blockSize * (y+y'))
@@ -55,9 +65,11 @@ get 0 (x:xs) = x;
 get n (x:xs) = get (n-1) xs;
 get _ _      = error "Non-exhaustive pattern in function get!";
 
+-- Draw a line of background.
 drawLine :: Canvas -> Int -> [Maybe Color] -> IO ();
 drawLine can y squares = sequence_ (zipWith (drawBlock can y) coords squares);
 
+-- Draw a single block.
 drawBlock :: Canvas -> Int -> Int -> Maybe Color -> IO ();
 drawBlock can y x (Just c) = do {
     fillColor can c;
@@ -71,5 +83,21 @@ drawBlock can y x _ = do {
 -- Start the game.
 start :: IO ();
 start = do {
-    withCanvasDo "canvas" (main emptyField);
+    grp <- newGroup;
+    withCanvasDo "canvas" (main emptyField grp);
+  };
+
+newGroup :: IO Group;
+newGroup = do {
+    x <- random;
+    shape <- case x of
+               x | x > 0.86  -> return line;
+                 | x > 0.71  -> return cube;
+                 | x > 0.57  -> return tShape;
+                 | x > 0.43  -> return zShape;
+                 | x > 0.29  -> return lShape;
+                 | x > 0.14  -> return zShapeFlip;
+                 | otherwise -> return lShapeFlip;
+                 ;
+    return (Group pink 0 (4, 0) shape);
   };
