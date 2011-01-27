@@ -195,6 +195,7 @@ depPat _                 = []
 depDef :: Def -> [String]
 depDef (Const (ConstDef _ expr)) =
   depExpr expr
+depDef x = []
 
 -- | Calculate what symbols every named expression depends on.
 depends :: [(String, Expr)] -> Map String [String]
