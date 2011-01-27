@@ -1,4 +1,4 @@
-export return, alert, setTimeout, mapM;
+export return, alert, setTimeout, mapM, random;
 
 -- Opaque data type representing a javascript funvtion.
 data JSFun = JSFun;
@@ -28,3 +28,7 @@ mapM f (x:xs) = do {
     return (x':xs');
   };
 mapM _ _ = return [];
+
+-- Returns a random double between 0 and 1.
+random :: IO Double;
+random = case _jsfun "Math.random" 0 of d -> return d;;
