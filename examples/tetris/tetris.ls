@@ -2,13 +2,12 @@ export start;
 import io;
 import canvas;
 import std;
+import shapes;
+import colors;
 
 -- Make the blocks this size.
 blockSize :: Int;
 blockSize = 20;
-
-black :: Color;
-black = RGB 0 0 0;
 
 -- Replicate an element n times.
 replicate :: Int -> a -> [a];
