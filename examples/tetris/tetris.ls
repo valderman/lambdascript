@@ -27,28 +27,32 @@ emptyField = replicate 20 (replicate 10 Nothing);
 
 -- The main game loop.
 main :: [[Maybe Color]] -> Group -> Canvas -> IO ();
-main field group can =
-    case update group field of
-      (group', field') -> do {
-        draw can group' field';
-      };
-      ;
+main field group can = (do {
+    draw can group field;
+    group'' <- case group' of
+                 (Just g) -> return g;
+                 _        -> newGroup;
+                 ;
+    setTimeout (main field' group'' can) 500;
+  }) {
+    groupfield = update group field;
+    group' = fst groupfield;
+    field' = snd groupfield;
+  };
 
 update :: Group -> [[Maybe Color]] -> (Maybe Group, [[Maybe Color]]);
-update g f = (Just g, f);
+update (Group c n (x, y) cs) f =
+  (Just (Group c n (x, y+1) cs), f);
 
 -- Infinite list, increasing by steps of blockSize from 0.
 coords :: [Int];
 coords = 0 : map (\x -> x+blockSize) coords;
 
 -- Draw the entire playing field.
-draw :: Canvas -> Maybe Group -> [[Maybe Color]] -> IO ();
+draw :: Canvas -> Group -> [[Maybe Color]] -> IO ();
 draw can grp lines = do {
     sequence_ (zipWith (drawLine can) coords lines);
-    case grp of
-      (Just grp') -> drawGroup can grp';
-      _           -> return ();
-      ;
+    drawGroup can grp;
   };
 
 -- Draw a group of falling blocks.
