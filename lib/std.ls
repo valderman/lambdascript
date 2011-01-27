@@ -1,4 +1,4 @@
-export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length;
+export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length, zipWith;
 
 data Maybe a = Nothing | Just a;
 
@@ -48,3 +48,7 @@ filter :: (a -> Bool) -> [a] -> [a];
 filter pred (x:xs) | pred x    = x : filter pred xs;
                    | otherwise = filter pred xs;
 filter _ _                     = [];
+
+zipWith :: (a -> b -> c) -> [a] -> [b] -> [c];
+zipWith f (a:as) (b:bs) = f a b : zipWith f as bs;
+zipWith _ _ _           = [];
