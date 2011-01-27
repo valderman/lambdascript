@@ -1,4 +1,4 @@
-export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length, zipWith;
+export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length, zipWith, repeat;
 
 data Maybe a = Nothing | Just a;
 
@@ -52,3 +52,6 @@ filter _ _                     = [];
 zipWith :: (a -> b -> c) -> [a] -> [b] -> [c];
 zipWith f (a:as) (b:bs) = f a b : zipWith f as bs;
 zipWith _ _ _           = [];
+
+repeat :: a -> [a];
+repeat x = x : repeat x;
