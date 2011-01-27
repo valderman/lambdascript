@@ -28,10 +28,6 @@ main field can = do {
 coords :: [Int];
 coords = 0 : map (\x -> x+blockSize) coords;
 
-sequence_ :: [IO ()] -> IO ();
-sequence_ (x:xs) = do {x; sequence_ xs;};
-sequence_ _      = return ();
-
 -- Draw the entire playing field.
 draw :: Canvas -> [[Maybe Color]] -> IO ();
 draw can lines = sequence_ (zipWith (drawLine can) coords lines);
