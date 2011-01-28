@@ -2,3 +2,6 @@
   pretty much always be called with a string literal, we could just inline the
   call to it in 9 cases out of 10.
 * Restrict type imports/exports (see Make.hs for details.)
+* Find out why the code generator dislikes local functions.
+* The codegen doesn't memoize local thunks; that's quite horrible, so we need
+  to fix it.
