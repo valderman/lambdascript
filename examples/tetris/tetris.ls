@@ -41,21 +41,38 @@ main field group can = do {
       };;
   };
 
+-- Update the game state.
 update :: Group -> [[Maybe Color]] -> (Maybe Group, [[Maybe Color]]);
 update (Group c n (x, y) cs) f =
   if stuck (x, y) (get n cs) f
-    then (Nothing, toBG (get n cs) f)
+    then (Nothing, toBG c x y (get n cs) f)
     else (Just (Group c n (x, y+1) cs), f)
     ;
 
-toBG = undefined;
+-- Merge a falling group of blocks into the background.
+toBG :: Color -> Int -> Int -> [(Int, Int)] -> [[Maybe Color]] -> [[Maybe Color]];
+toBG c x y cs f = take y f ++ fold (insert2d x (Just c)) (drop y f) cs;
+
+-- Insert a single block into the given two dimensional list.
+insert2d :: Int -> a -> (Int, Int) -> [[a]] -> [[a]];
+insert2d basex col (x, y) f = put y f (put (basex+x) (get y f) col);
+
+-- A normal right fold.
+fold :: (a -> b -> b) -> b -> [a] -> b;
+fold f acc (x:xs) = f x (fold f acc xs);
+fold _ acc _      = acc;
+
+-- Insert an item into a list at the given position.
+put :: Int -> [a] -> a -> [a];
+put 0 (_:xs) x'     = x':xs;
+put n (x:xs) x' = x:put (n-1) xs x';
 
 -- Was the given block stuck somewhere in the given field?
 stuck :: (Int, Int) -> [(Int, Int)] -> [[Maybe Color]] -> Bool;
-stuck (bx, by) cs f = any (map (stuckAt (map (drop bx) (drop by f))) cs)
-                      || any (map (\(_, y) -> y+by > 18) cs);
+stuck (bx, by) cs f = any (map (\(_, y) -> y+by > 18) cs)
+                      || any (map (stuckAt (map (drop bx) (drop by f))) cs);
 
-stuckAt f (x, y) = case get x (get y f) of
+stuckAt f (x, y) = case get x (get (y+1) f) of
                      (Just _) -> True;
                      _        -> False;
                      ;
