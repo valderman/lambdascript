@@ -27,22 +27,41 @@ emptyField = replicate 20 (replicate 10 Nothing);
 
 -- The main game loop.
 main :: [[Maybe Color]] -> Group -> Canvas -> IO ();
-main field group can = (do {
+main field group can = do {
     draw can group field;
-    group'' <- case group' of
-                 (Just g) -> return g;
-                 _        -> newGroup;
-                 ;
-    setTimeout (main field' group'' can) 500;
-  }) {
-    groupfield = update group field;
-    group' = fst groupfield;
-    field' = snd groupfield;
+    -- Use a case expression here to work around a few nasty bugs with local
+    -- definitions.
+    case update group field of
+      (group', field') -> do {
+        group'' <- case group' of
+                     (Just g) -> return g;
+                     _        -> newGroup;
+                     ;
+        setTimeout (main field' group'' can) 500;
+      };;
   };
 
 update :: Group -> [[Maybe Color]] -> (Maybe Group, [[Maybe Color]]);
 update (Group c n (x, y) cs) f =
-  (Just (Group c n (x, y+1) cs), f);
+  if stuck (x, y) (get n cs) f
+    then (Nothing, toBG (get n cs) f)
+    else (Just (Group c n (x, y+1) cs), f)
+    ;
+
+toBG = undefined;
+
+-- Was the given block stuck somewhere in the given field?
+stuck :: (Int, Int) -> [(Int, Int)] -> [[Maybe Color]] -> Bool;
+stuck (bx, by) cs f = any (map (stuckAt (map (drop bx) (drop by f))) cs)
+                      || any (map (\(_, y) -> y+by > 18) cs);
+
+stuckAt f (x, y) = case get x (get y f) of
+                     (Just _) -> True;
+                     _        -> False;
+                     ;
+
+any (x:xs) = x || any xs;
+any _      = False;
 
 -- Infinite list, increasing by steps of blockSize from 0.
 coords :: [Int];
