@@ -132,12 +132,18 @@ genExpr (ETyped ex t) = genExpr' t ex
         -- A lambda that cares about its argument; that's 'x <- m'
         ETyped (ELambda [PTyped (PID (VIdent id)) _] next') _ -> do
           v <- newVar
+          temp <- newVar
           bind id v
-          stmt $ Assign v (Index ex' $ Ops.Const $ NumConst $ 1)
+          -- We create a new thunk from the evaled expression because the
+          -- argument of an IO expression may evaluate to different things
+          -- depending on various factors, so we evaluate it once and save that
+          -- value.
+          stmt $ Assign temp (Eval $ Index ex' $ Ops.Const $ NumConst 1)
+          stmt $ Assign v (Thunk $ Ops.Ident temp)
           genExpr next'
         -- A lambda that throws away its argument; that's just 'm'
         ETyped (ELambda [PTyped PWildcard _] next') _ -> do
-          stmt $ ExpStmt ex'
+          stmt $ ExpStmt $ Eval $ Index ex' (Ops.Const $ NumConst 1)
           genExpr next'
         x -> error $ "WHAT?\n\n" ++ show x ++ "\n\n"
 
@@ -231,21 +237,10 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (ECase ex cps) = do
       -- If we have any expression more complex than an identifier, we need to
       -- evaluate it beforehand and use a temp var instead.
-      ex' <- preEvalComplexExpr ex
+      ex' <- genExpr ex
       v <- newStrict
       genCPs ex' v cps >>= stmt . Forever
-      return $ eval $ Ops.Ident v
-      where
-        preEvalComplexExpr ex@(ETyped (EVar _) _) =
-          genExpr ex
-        preEvalComplexExpr ex@(ETyped (ETuple _) _) =
-          genExpr ex
-        preEvalComplexExpr ex = do
-          ex' <- genExpr ex
-          v <- newStrict
-          stmt $ Assign v ex'
-          return $ Ops.Ident v
-          
+      return $ eval $ Ops.Ident v          
 
     -- Bindings; we just generate them and assign them to local vars.
     genExpr' t (EBinds ex defs) = do
