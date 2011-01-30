@@ -1,4 +1,4 @@
-export return, alert, setTimeout, mapM, random, sequence_, newIORef, readIORef, writeIORef;
+export return, alert, setTimeout, mapM, random, sequence_, newIORef, readIORef, writeIORef, onKeyUp, clearKeyUp;
 
 -- Opaque data type representing a javascript funvtion.
 data JSFun = JSFun;
@@ -55,5 +55,17 @@ readIORef ref =
 writeIORef :: IORef a -> a -> IO ();
 writeIORef ref x =
   case _jsfun "$writeIORef" 2 ref x of
+    0 -> return ();
+    ;
+
+onKeyUp :: (Int -> IO ()) -> IO ();
+onKeyUp f =
+  case _jsfun "$onKeyUp" 1 (_export 1 f) of
+    0 -> return ();
+    ;
+
+clearKeyUp :: IO ();
+clearKeyUp =
+  case _jsfun "(function() {document.onkeyup = null; return 0;})" 0 of
     0 -> return ();
     ;
