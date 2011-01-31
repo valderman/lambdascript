@@ -37,7 +37,7 @@ mapM _ _ = return [];
 
 -- Returns a random double between 0 and 1.
 random :: IO Double;
-random = case _jsfun "Math.random" 0 of d -> return d;;
+random = _jsfun "Math.random" 0;
 
 sequence_ :: [IO ()] -> IO ();
 sequence_ (x:xs) = do {x; sequence_ xs;};
