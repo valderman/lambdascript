@@ -1,8 +1,10 @@
 import io;
 
-print :: String -> IO Int;
-print s = do {
-    case _jsfun "print" 1 s of [] -> return 0;;
-  };
+print x = do {
+    _jsfun "(function(x) {print(x);})" 1 x;  
+    return ();
+  }; 
 
-main = print "a string!";
+main = do {
+    print "a string!";
+  };

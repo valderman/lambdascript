@@ -15,13 +15,16 @@ return = IO;
 
 -- Javascript alert.
 alert :: a -> IO ();
-alert s = case _jsfun "alert" 1 s of [] -> return ();;
+alert s = do {
+    _jsfun "alert" 1 s;
+    return ();
+  };
 
 -- Javascript window.setTimeout.
 setTimeout :: IO () -> Int -> IO ();
 setTimeout f n = do {
-    case _jsfun "window.setTimeout" 2 (_export 0 f) n of
-      [] -> return ();;
+    _jsfun "window.setTimeout" 2 (_export 0 f) n;
+    return ();
   };
 
 mapM :: (a -> IO b) -> [a] -> IO [b];
@@ -41,31 +44,25 @@ sequence_ (x:xs) = do {x; sequence_ xs;};
 sequence_ _      = return ();
 
 newIORef :: a -> IO (IORef a);
-newIORef x =
-  case _jsfun "$newIORef" 1 x of
-    x' -> return x';
-    ;
+newIORef x = _jsfun "$newIORef" 1 x;
 
 readIORef :: IORef a -> IO a;
-readIORef ref =
-  case _jsfun "$readIORef" 1 ref of
-    x -> return x;
-    ;
+readIORef ref = _jsfun "$readIORef" 1 ref;
 
 writeIORef :: IORef a -> a -> IO ();
-writeIORef ref x =
-  case _jsfun "$writeIORef" 2 ref x of
-    0 -> return ();
-    ;
+writeIORef ref x = do {
+    _jsfun "$writeIORef" 2 ref x;
+    return ();
+  };
 
 onKeyUp :: (Int -> IO ()) -> IO ();
-onKeyUp f =
-  case _jsfun "$onKeyUp" 1 (_export 1 f) of
-    0 -> return ();
-    ;
+onKeyUp f = do {
+    _jsfun "$onKeyUp" 1 (_export 1 f);
+    return ();
+  };
 
 clearKeyUp :: IO ();
-clearKeyUp =
-  case _jsfun "(function() {document.onkeyup = null; return 0;})" 0 of
-    0 -> return ();
-    ;
+clearKeyUp = do {
+    _jsfun "(function() {document.onkeyup = null; return 0;})" 0;
+    return ();
+  };

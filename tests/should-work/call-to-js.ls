@@ -1,7 +1,7 @@
-seqBool a b =
-  case a of
-    (False) -> b;
-    _       -> b;
-  ;
+import io;
 
-main = seqBool (_jsfun "print" 1 27) 0;
+main :: IO Int;
+main = do {
+    _jsfun "print" 1 27;
+    return 0;
+  };

@@ -8,36 +8,27 @@ given.
 
 If we want to create an LS equivalent to alert(), we'd write:
 alert :: String -> IO ();
-alert text =
-  case _jsfun "alert" 1 text of
-    [] -> return ();
-    ;
+alert text = do {
+    _jsfun "alert" 1 text;
+    return ();
+  };
 
-Why the case expression? Well, the function returned by _jsfun needs to be
-evaluated. Since those functions can contain side effects, they should be
-evaluated immediately. The empty list is what the runtime returns to LS
-when it got served an undefined JS value.
+While _jsfun has type String -> Int -> a to facilitate varargs usage, it
+should ALWAYS be called as though its return type were IO a!
 
 If we wanted a prompt() equivalent:
 prompt :: String -> IO String;
-prompt question =
-  case _jsfun "prompt" 1 question of
-    (c:s) -> return (c:s);
-    ;
-
-Note the need to match on (c:s) rather than just x, _ or something else,
-since binding to an identifier or matching a wildcard doesn't force evaluation
-of anything.
+prompt question = _jsfun "prompt" 1 question;
 
 What if we want JS to be able to call us back? Use _export; it takes an
 integer as its first parameter and a function as its second. The integer gives
 the arity of the function. For example we can create an interface to
 window.setTimeout like this:
 setTimeout :: IO () -> Int -> IO ();
-setTimeout f n =
-  case _jsfun "window.setTimeout" 2 (_export 0 f) n of
-    [] -> return ();
-    ;
+setTimeout f n = do {
+    _jsfun "window.setTimeout" 2 (_export 0 f) n;
+    return ();
+  };
 
 
 
@@ -49,8 +40,8 @@ as a controlled means of bringing JS and DOM interaction to LS. As such, its
 use comes with several restrictions that does not apply to normal LS
 functions.
 
-Can NOT be partially applied. If you want to do that then you have to create
-your own call-specific wrapper:
+_jsfun can NOT be partially applied. If you want to do that then you have to
+create your own call-specific wrapper:
 someCall x y z = _jsfun "someCall" 3 x y z;
 _jsfun isn't meant thrown around, but as an extremely controlled way of
 bringing I/O to LS. Thus it doesn't really make sense to take any pains to
@@ -65,4 +56,4 @@ At present, JS functions returned by _jsfun can not be called by LS programs.
 
 Finally, since the type of _jsfun is pretty much a huge hole in the type
 system, it's critical that you explicitly specify the correct types of your
-_jsfun-using.
+_jsfun-using functions.

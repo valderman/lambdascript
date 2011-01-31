@@ -6,6 +6,8 @@ import LambdaScript.Abs (Type)
 
 data Exp
   = Thunk     Exp
+    -- IOThunk doesn't memoize its result.
+  | IOThunk   Exp
   | Eval      Exp
   | Tailcall  Exp
     -- Use the second expression as an array index into the first

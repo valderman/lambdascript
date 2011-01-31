@@ -1,9 +1,8 @@
 import io;
 
-init = case _jsfun "(function() {herpderp = 0; return 0;})" 0 of 0 -> return ();;
-plusEtt = case _jsfun "(function() {herpderp++; return herpderp;})" 0 of x -> return x;;
-
-plus n = case _jsfun "(function(x) {herpderp+=x; return herpderp;})" 1 n of x -> return x;;
+init = do {_jsfun "(function() {herpderp = 0; return 0;})" 0; return ();};
+plusEtt = _jsfun "(function() {herpderp++; return herpderp;})" 0;
+plus n = _jsfun "(function(x) {herpderp+=x; return herpderp;})" 1 n;
 
 plusTva = plus 2;
 

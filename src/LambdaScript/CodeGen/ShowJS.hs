@@ -7,6 +7,8 @@ import Data.List (intercalate)
 instance Show Exp where
   show (Thunk ex) =
     "function _(){if(_u(_)) _.x=" ++ show ex ++ ";return _.x;}"
+  show (IOThunk ex) =
+    "function _(){return " ++ show ex ++ ";}"
   show (Eval ex) =
     show ex ++ "()"
   show (Tailcall ex) =

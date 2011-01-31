@@ -1,6 +1,9 @@
 import io;
 
 print :: String -> IO ();
-print x = case _jsfun "print" 1 x of [] -> return ();;
+print x = do {
+    _jsfun "(function(x) {print(x);})" 1 x;  
+    return ();
+  };
 
 main = print "a string!";

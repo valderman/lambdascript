@@ -81,6 +81,9 @@ optE :: Opt -> Exp -> Exp
 optE o (Thunk e) =
   optExp o $ Thunk (optE o e)
 
+optE o (IOThunk e) =
+  optExp o $ IOThunk (optE o e)
+
 optE o (Eval e) =
   optExp o $ Eval (optE o e)
 

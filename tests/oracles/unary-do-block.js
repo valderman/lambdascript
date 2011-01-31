@@ -1,2 +1,1 @@
 a string!
-0
