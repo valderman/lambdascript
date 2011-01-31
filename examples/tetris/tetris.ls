@@ -13,6 +13,8 @@ import colors;
 --  group coords.
 data Group = Group Color, Int, (Int, Int), [[(Int, Int)]];
 
+timestep = 250;
+
 -- Make the blocks this size.
 blockSize :: Int;
 blockSize = 20;
@@ -26,8 +28,10 @@ emptyField :: [[Maybe Color]];
 emptyField = replicate 20 (replicate 10 Nothing);
 
 -- The main game loop.
-main :: [[Maybe Color]] -> Group -> Canvas -> IO ();
-main field group can = do {
+main :: IORef [[Maybe Color]] -> IORef Group -> Canvas -> IO ();
+main fieldref groupref can = do {
+    group <- readIORef groupref;
+    field <- readIORef fieldref;
     draw can group field;
     -- Use a case expression here to work around a few nasty bugs with local
     -- definitions.
@@ -37,8 +41,25 @@ main field group can = do {
                      (Just g) -> return g;
                      _        -> newGroup;
                      ;
-        setTimeout (main field' group'' can) 500;
+        writeIORef groupref group'';
+        writeIORef fieldref field';
+        setTimeout (main fieldref groupref can) timestep;
       };;
+  };
+
+keyHandler :: IORef Group -> IORef [[Maybe Color]] -> Canvas -> Int -> IO ();
+keyHandler grp f can k = do {
+    grp' <- readIORef grp;
+    f' <- readIORef f;
+    g <- case grp' of
+      (Group c n (x, y) cs)
+        | k == 37 -> return (Group c n (x-1,y) cs);
+        | k == 39 -> return (Group c n (x+1,y) cs);
+        | k == 38 -> return (Group c ((n+1)%length cs) (x,y) cs);
+        | otherwise -> do {alert n; return grp';};
+      ;    
+    writeIORef grp g;
+    draw can g f';
   };
 
 -- Update the game state.
@@ -69,7 +90,8 @@ put n (x:xs) x' = x:put (n-1) xs x';
 
 -- Was the given block stuck somewhere in the given field?
 stuck :: (Int, Int) -> [(Int, Int)] -> [[Maybe Color]] -> Bool;
-stuck (bx, by) cs f = any (map (\(_, y) -> y+by > 18) cs)
+stuck (bx, by) cs f = (bx < 0)
+                      || any (map (\(x, y) -> (y+by > 18) || (x+bx > 9)) cs)
                       || any (map (stuckAt (map (drop bx) (drop by f))) cs);
 
 stuckAt f (x, y) = case get x (get (y+1) f) of
@@ -124,7 +146,12 @@ drawBlock can y x _ = do {
 start :: IO ();
 start = do {
     grp <- newGroup;
-    withCanvasDo "canvas" (main emptyField grp);
+    grpref <- newIORef grp;
+    fieldref <- newIORef emptyField;
+    withCanvasDo "canvas" (\can -> (do {
+          onKeyUp (keyHandler grpref fieldref can);
+          main fieldref grpref can;
+        }));
   };
 
 newGroup :: IO Group;
