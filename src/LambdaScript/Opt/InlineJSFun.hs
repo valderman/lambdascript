@@ -15,6 +15,8 @@ inlineJSFun = Opt {
 inline :: Exp -> Exp
 inline (Call _ (Call _ (Ident (Builtin "_jsfun")) [Thunk (Const (StrConst fun))]) _) =
   Call 0 (Ident (Builtin "$jsfun")) [(Const $ InlineStrConst fun)]
+inline (Call _ (Call _ (Ident (Builtin "_rawjsfun")) [Thunk (Const (StrConst fun))]) _) =
+  Call 0 (Ident (Builtin "_rawjsfun")) [(Const $ InlineStrConst fun)]
 inline (Call _ (Call _ (Ident (Builtin "$jsfun")) args) next) =
   Call 0 (Ident (Builtin "$jsfun")) (args ++ next)
 inline x =

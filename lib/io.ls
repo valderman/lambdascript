@@ -44,14 +44,14 @@ sequence_ (x:xs) = do {x; sequence_ xs;};
 sequence_ _      = return ();
 
 newIORef :: a -> IO (IORef a);
-newIORef x = _jsfun "$newIORef" 1 x;
+newIORef x = _rawjsfun "$newIORef" 1 x;
 
 readIORef :: IORef a -> IO a;
-readIORef ref = _jsfun "$readIORef" 1 ref;
+readIORef ref = _rawjsfun "$readIORef" 1 ref;
 
 writeIORef :: IORef a -> a -> IO ();
 writeIORef ref x = do {
-    _jsfun "$writeIORef" 2 ref x;
+    _rawjsfun "$writeIORef" 2 ref x;
     return ();
   };
 

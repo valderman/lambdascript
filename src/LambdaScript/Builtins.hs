@@ -18,6 +18,7 @@ defs = [
     ("()",      tUnit),
     ("error",   tString ~> tv "a"),
     ("_jsfun",  tString ~> tInt ~> tv "a"),
+    ("_rawjsfun",  tString ~> tInt ~> tv "a"),
     ("_export", tInt ~> tv "a" ~> mkADT (TIdent "JSFun") []),
     ("$bind",   io (tv "a") ~> (tv "a" ~> io (tv "b")) ~> io (tv "b"))
   ]
