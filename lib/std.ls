@@ -29,6 +29,7 @@ take n (x:xs) = x:take (n-1) xs;
 drop :: Int -> [a] -> [a];
 drop 0 xs     = xs;
 drop n (_:xs) = drop (n-1) xs;
+drop _ _      = [];
 
 reverse :: [a] -> [a];
 reverse = reverse' [] {
