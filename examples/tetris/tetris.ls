@@ -39,14 +39,29 @@ main fieldref groupref can = do {
       (group', field') -> do {
         group'' <- case group' of
                      (Just g) -> return g;
-                     _        -> newGroup;
+                     _        -> do {
+                         writeIORef fieldref (killCompleteLines field');
+                         newGroup;
+                       };
                      ;
         writeIORef groupref group'';
-        writeIORef fieldref field';
         setTimeout (main fieldref groupref can) timestep;
       };;
   };
 
+-- Remove full lines from the playing field.
+killCompleteLines :: [[Maybe Color]] -> [[Maybe Color]];
+killCompleteLines field =
+  case fold (\l (xs, n) -> if allJust l then (xs, n+1) else (l:xs, n)) ([], 0) field of
+    (xs, n) -> replicate n (replicate 10 Nothing) ++ xs;
+    ;
+
+allJust :: [Maybe a] -> Bool;
+allJust ((Just _):xs) = allJust xs;
+allJust []            = True;
+allJust _             = False;
+
+-- Handle key presses
 keyHandler :: IORef Group -> IORef [[Maybe Color]] -> Canvas -> Int -> IO ();
 keyHandler grp f can k = do {
     grp' <- readIORef grp;
@@ -56,10 +71,15 @@ keyHandler grp f can k = do {
         | k == 37 -> return (Group c n (x-1,y) cs);
         | k == 39 -> return (Group c n (x+1,y) cs);
         | k == 38 -> return (Group c ((n+1)%length cs) (x,y) cs);
-        | otherwise -> do {alert n; return grp';};
-      ;    
-    writeIORef grp g;
-    draw can g f';
+        | otherwise -> return grp';
+      ;
+    case g of
+      (Group c n (x, y) cs) | !(stuck (x, y-1) (get n cs) f') -> do {
+        writeIORef grp g;
+        draw can g f';
+      };
+      _ -> return ();
+      ;
   };
 
 -- Update the game state.
