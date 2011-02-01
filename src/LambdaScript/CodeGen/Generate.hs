@@ -199,23 +199,24 @@ genExpr (ETyped ex t) = genExpr' t ex
     -- If expression; if(a) {v = thenEx;} else {v = elseEx;}
     genExpr' t (EIf cond ifE elE) = do
       v <- newVar
-      cond' <- genExpr cond
-      (ifE', ifS) <- isolate $ genExpr ifE
-      (elE', elS) <- isolate $ genExpr elE
-      stmt $ If cond'
-                (Block $ ifS ++ [Assign v $ thunk ifE'])
-                (Just . Block $ elS ++ [Assign v $ thunk elE'])
-      return $ eval $ Ops.Ident v
+      ((), stmts) <- isolate $ do
+        cond' <- genExpr cond
+      	(ifE', ifS) <- isolate $ genExpr ifE
+      	(elE', elS) <- isolate $ genExpr elE
+      	stmt $ If cond'
+                (Block $ ifS ++ [Return (nargs ifE) ifE'])
+                (Just . Block $ elS ++ [Return (nargs elE) elE'])
+      return $ Call 0 (FunExp $ Lambda [] (Block stmts)) []
 
     -- Case expression; works pretty much like a lambda with an arbitrary
     -- number of bodies. (See also: recursive documentation)
     genExpr' t (ECase ex cps) = do
-      -- If we have any expression more complex than an identifier, we need to
-      -- evaluate it beforehand and use a temp var instead.
-      ex' <- genExpr ex
-      v <- newStrict
-      genCPs ex' v cps >>= stmt . Forever
-      return $ eval $ Ops.Ident v          
+      ((), stmts) <- isolate $ do
+        ex' <- genExpr ex
+        v <- newStrict
+        genCPs ex' v cps >>= stmt . Forever
+        stmt $ Return (nargs $ ETyped undefined t) $ eval $ Ops.Ident v
+      return $ Call 0 (FunExp $ Lambda [] (Block stmts)) []
 
     -- Bindings; we just generate them and assign them to local vars.
     genExpr' t (EBinds ex defs) = do
