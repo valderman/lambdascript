@@ -1,4 +1,5 @@
 export start;
+import dom;
 import io;
 import canvas;
 import std;
@@ -27,9 +28,17 @@ replicate n x = take n (repeat x);
 emptyField :: [[Maybe Color]];
 emptyField = replicate 20 (replicate 10 Nothing);
 
+showInt :: Int -> IO String;
+showInt n = _jsfun "(function(x) {return x;})" 1 n;
+
 -- The main game loop.
-main :: IORef [[Maybe Color]] -> IORef Group -> Canvas -> IO ();
-main fieldref groupref can = do {
+main :: IORef [[Maybe Color]] -- IORef to the playing field
+     -> IORef Group           -- IORef to the falling group
+     -> Int                   -- # of lines so far
+     -> DOMElement            -- Label to write # of lines to
+     -> Canvas                -- Canvas to draw to
+     -> IO ();
+main fieldref groupref lines linesLbl can = do {
     group <- readIORef groupref;
     field <- readIORef fieldref;
     draw can group field;
@@ -37,23 +46,32 @@ main fieldref groupref can = do {
     -- definitions.
     case update group field of
       (group', field') -> do {
-        group'' <- case group' of
-                     (Just g) -> return g;
+        grpLines <- case group' of
+                     (Just g) -> return (g, lines);
                      _        -> do {
-                         writeIORef fieldref (killCompleteLines field');
-                         newGroup;
+                         nkilledField <- return (killCompleteLines field');
+                         writeIORef fieldref (snd nkilledField);
+                         g <- newGroup;
+                         lk <- return (fst nkilledField);
+                         linesTxt <- showInt (lines+lk);
+                         setAttr linesLbl "innerHTML" linesTxt;
+                         return (g, lines+lk);
                        };
                      ;
-        writeIORef groupref group'';
-        setTimeout (main fieldref groupref can) timestep;
+        case grpLines of
+          (group'', lines) -> do {
+              writeIORef groupref group'';
+              setTimeout (main fieldref groupref lines linesLbl can)
+                         timestep;
+            };;
       };;
   };
 
 -- Remove full lines from the playing field.
-killCompleteLines :: [[Maybe Color]] -> [[Maybe Color]];
+killCompleteLines :: [[Maybe Color]] -> (Int, [[Maybe Color]]);
 killCompleteLines field =
   case fold (\l (xs, n) -> if allJust l then (xs, n+1) else (l:xs, n)) ([], 0) field of
-    (xs, n) -> replicate n (replicate 10 Nothing) ++ xs;
+    (xs, n) -> (n, replicate n (replicate 10 Nothing) ++ xs);
     ;
 
 allJust :: [Maybe a] -> Bool;
@@ -168,9 +186,12 @@ start = do {
     grp <- newGroup;
     grpref <- newIORef grp;
     fieldref <- newIORef emptyField;
+    linesLbl <- getElementById "lines";
     withCanvasDo "canvas" (\can -> (do {
           onKeyUp (keyHandler grpref fieldref can);
-          main fieldref grpref can;
+          case linesLbl of (Just linesLbl') ->
+            main fieldref grpref 0 linesLbl' can;
+            ;
         }));
   };
 
