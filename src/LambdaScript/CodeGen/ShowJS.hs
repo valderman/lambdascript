@@ -6,7 +6,7 @@ import Data.List (intercalate)
 
 instance Show Exp where
   show (Thunk ex) =
-    "function _(){if(_u(_)) _.x=" ++ show ex ++ ";return _.x;}"
+    "function _(){if(_.x===$u) _.x=" ++ show ex ++ ";return _.x;}"
   show (IOThunk ex) =
     "function _(){return " ++ show ex ++ ";}"
   show (Eval ex) =
@@ -44,7 +44,7 @@ instance Show Exp where
 
 instance Show Stmt where
   show (SelfThunk id ss) =
-    "if(_u($._" ++ id ++ ")){" ++ concat (map show ss) ++ ";}return $._" ++ id ++ ".x;"
+    "if($u===$._" ++ id ++ ".x){" ++ concat (map show ss) ++ ";}return $._" ++ id ++ ".x;"
   show (Assign v@(Global _ id) ex) = show v ++ " = " ++ show ex ++ ";\n"
   show (Assign v ex) = "var " ++ show v ++ " = " ++ show ex ++ ";\n"
   show (If ex th el) = "if(" ++ show ex ++ ") " ++
