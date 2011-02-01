@@ -60,11 +60,9 @@ internal BGroup. Def ::= BindGroup ;
 separator Def "" ;
 
 -- Happy doesn't allow this to be declared internal.
-ConstDef. ConstDef ::= Ident " = " Expr ;
+ConstDef. ConstDef ::= Ident "=" Expr ;
 separator ConstDef "";
-BindGroup. BindGroup ::= "\n-- Begin bind group\n"
-                         [ConstDef]
-                         "\n-- End bind group\n\n" ;
+BindGroup. BindGroup ::= [ConstDef];
 
 -- a top pattern can be either a list of patterns followed by "->" and an
 -- expression, or a list of patterns followed by a list of guarded top
@@ -168,7 +166,7 @@ ECase.    Expr1 ::= "case" Expr "of" [CasePattern] ;
 EBinds.   Expr  ::= Expr2 "{" [Def] "}" ;
 EDo.      Expr  ::= "do" "{" [DoStmt] "}" ;
 -- internal: type annotated expression
-internal ETyped. Expr ::= Expr " :: " Type ;
+internal ETyped. Expr ::= Expr "::" Type ;
 coercions Expr 9 ;
 separator Expr "," ;
 
@@ -205,7 +203,7 @@ PConstr.   Pattern2 ::= "(" TIdent [Pattern] ")" ;
 PWildcard. Pattern2 ::= "_" ;
 PCons.     Pattern1 ::= Pattern2 ":" Pattern1 ;
 -- internal: type-annotated pattern
-internal PTyped. Pattern ::= "(" Pattern " :: " Type ")" ;
+internal PTyped. Pattern ::= "(" Pattern "::" Type ")" ;
 coercions Pattern 2 ;
 separator Pattern "" ;
 
