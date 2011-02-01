@@ -54,8 +54,6 @@ instance Show Stmt where
                             _       -> ""
   show (Return _ ex) = "return " ++ show ex ++ ";\n"
   show (Block stmts) = "{\n" ++ concat (map show stmts) ++ "}"
-  show (Forever st)  = "for(;;) " ++ show st
-  show (Break)       = "break;\n"
   show (NoStmt)      = ""
   show (ExpStmt ex)  = show ex ++ ";\n"
   show x             = error $ "No Show instance for some Stmt!"

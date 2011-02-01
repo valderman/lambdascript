@@ -213,10 +213,26 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (ECase ex cps) = do
       ((), stmts) <- isolate $ do
         ex' <- genExpr ex
-        v <- newStrict
-        genCPs ex' v cps >>= stmt . Forever
-        stmt $ Return (nargs $ ETyped undefined t) $ eval $ Ops.Ident v
+        ex'' <- if containsCall ex'
+                   then do
+                     v <- newVar
+                     stmt $ Assign v $ thunk ex'
+                     return (eval $ Ops.Ident v)
+                   else return ex'
+        genCPs ex'' cps >>= stmt
       return $ Call 0 (FunExp $ Lambda [] (Block stmts)) []
+     where
+      containsCall (Thunk ex)        = containsCall ex
+      containsCall (IOThunk ex)      = containsCall ex
+      containsCall (Eval ex)         = containsCall ex
+      containsCall (Index ex1 ex2)   = containsCall ex1 || containsCall ex2
+      containsCall (Array exs)       = any containsCall exs
+      containsCall (ConstrIs ex _ _) = containsCall ex
+      containsCall (Oper _ ex1 ex2)  = containsCall ex1 || containsCall ex2
+      containsCall (Neg ex)          = containsCall ex
+      containsCall (Call _ _ _)      = True
+      containsCall (Tailcall ex)     = True
+      containsCall _                 = False
 
     -- Bindings; we just generate them and assign them to local vars.
     genExpr' t (EBinds ex defs) = do
@@ -341,14 +357,14 @@ genPList ex [] =
 
 -- | Generate a set of case patterns. A case pattern is a pattern of the form
 --   pattern [| guard] -> expression. The given Exp gives the variable that is
---   to be matched against the pattern, and the Var is the variable where the
---   result of the case expression will be placed.
---   The result var must be strict.
-genCPs :: Exp -> Var -> [CasePattern] -> CG Stmt
-genCPs ex result (CPNoGuards p thenDo : ps) = do
+--   to be matched against the pattern. Since all case expressions are executed
+--   within a closure as part of an expression, the result value should be
+--   returned.
+genCPs :: Exp -> [CasePattern] -> CG Stmt
+genCPs ex (CPNoGuards p thenDo : ps) = do
   (cond, bind) <- isolate $ genPat ex p
   (thenEx, thenStmts) <- isolate $ genExpr thenDo
-  (Block elsePart) <- genCPs ex result ps
+  (Block elsePart) <- genCPs ex ps
   -- We don't use the else part, because we need fall-through behaviour
   -- when we introduce guards into the mix. For example:
   -- foo (Just x) | x < 2 = bar
@@ -376,26 +392,27 @@ genCPs ex result (CPNoGuards p thenDo : ps) = do
   return . Block $ (If cond
                        (Block $  bind
                               ++ thenStmts
-                              ++ [Assign result thenEx, Break])
+                              ++ [Return (nargs thenDo) thenEx])
                        Nothing) : elsePart
-genCPs ex result (CPGuards p cases : ps) = do
+genCPs ex (CPGuards p cases : ps) = do
   (cond, bind) <- isolate $ genPat ex p
-  gs <- mapM (genGuard result) cases
-  (Block elsePart) <- genCPs ex result ps
+  gs <- mapM genGuard cases
+  (Block elsePart) <- genCPs ex ps
   return . Block $ (If cond
                        (Block $ bind ++ gs)
                        Nothing) : elsePart
-genCPs ex result [] = do
+genCPs ex [] = do
   return $ Block [lsError "non-exhaustive pattern in function!"]
 
 -- | Generate a guarded expression. Basically, if the guard holds we execute
 --   the associated expression and assign its return value to the result var,
 --   otherwise do nothing.
---   The result var must be strict.
-genGuard :: Var -> GuardedCaseExpr -> CG Stmt
-genGuard v (GuardedCaseExpr (GuardExpr ge) ex) = do
+--   Since case expressions are executed within a closure as part of an
+--   expression, the result should be returned.
+genGuard :: GuardedCaseExpr -> CG Stmt
+genGuard (GuardedCaseExpr (GuardExpr ge) ex) = do
   guard <- genExpr ge
   (expr, stmts) <- isolate $ genExpr ex
   return $ If guard
-              (Block $ stmts ++ [Assign v expr, Break])
+              (Block $ stmts ++ [Return (nargs ex) expr])
               Nothing

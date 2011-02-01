@@ -59,12 +59,6 @@ optS o (Return n e) =
 optS o (Block ss) =
   optStm o $ Block (map (optS o) ss)
 
-optS o (Forever s) =
-  optStm o $ Forever (optS o s)
-
-optS o Break =
-  optStm o Break
-
 optS o (ExpStmt ex) =
   optStm o (ExpStmt $ optE o ex)
 

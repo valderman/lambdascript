@@ -14,7 +14,6 @@ noUselessAssigns = Opt {
   }
 
 findAs :: Stmt -> Maybe (Var, Var)
-findAs (Forever stmt)        = findAs stmt
 findAs (Block stmts)         = listToMaybe . catMaybes $ map findAs stmts
 findAs (Assign v (Ident v')) = Just (v, v')
 findAs (SelfThunk _ stmts)   = listToMaybe . catMaybes $ map findAs stmts

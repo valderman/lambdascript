@@ -40,9 +40,7 @@ data Stmt
     -- mapFOver = map f
   | Return  Int Exp
   | Block   [Stmt]
-  | Forever Stmt
   | ExpStmt Exp
-  | Break
   | NoStmt
 
 -- | Operators
