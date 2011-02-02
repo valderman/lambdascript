@@ -1,4 +1,5 @@
--- | Remove any code that's unreachable because it comes after a return statement.
+-- | Remove any code that's unreachable because it comes after an unconditional
+--   break.
 module LambdaScript.Opt.RemoveDeadCode (removeDeadCode) where
 import LambdaScript.Opt.Core
 import LambdaScript.CodeGen.Ops
@@ -10,11 +11,11 @@ removeDeadCode = Opt {
   }
 
 removeDead :: Stmt -> Stmt
-removeDead b@(Block ss) =
-  case span (not . isReturn) ss of
-    (before, (return : _)) -> Block $ before ++ [return]
-    _                      -> b
+removeDead b@(Forever (Block ss)) =
+  case span (not . isBreak) ss of
+    (before, (break:_)) -> Forever $ Block $ before ++ [break]
+    _                   -> b
   where
-    isReturn (Return _ _) = True
-    isReturn _            = False
+    isBreak Break = True
+    isBreak _     = False
 removeDead x = x
