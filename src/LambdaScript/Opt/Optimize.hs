@@ -15,6 +15,7 @@ import LambdaScript.Opt.NoUselessAssigns
 import LambdaScript.Opt.UnThunkFunc
 import LambdaScript.Opt.InlineReturn
 import LambdaScript.Opt.InlineJSFun
+import LambdaScript.Opt.RemoveDeadCode
 
 -- | The list of optimizations to apply to the list of functions. Optimizations
 --   are applied from left to right.
@@ -33,7 +34,8 @@ opts = [
     closuresFromFolded,-}
     unEvalGlobals,
     inlineReturn,
-    inlineJSFun
+    inlineJSFun,
+    removeDeadCode
   ]
 
 -- | Apply optimizations to the functions.
