@@ -20,7 +20,8 @@ defs = [
     ("_jsfun",  tString ~> tInt ~> tv "a"),
     ("_rawjsfun",  tString ~> tInt ~> tv "a"),
     ("_export", tInt ~> tv "a" ~> mkADT (TIdent "JSFun") []),
-    ("$bind",   io (tv "a") ~> (tv "a" ~> io (tv "b")) ~> io (tv "b"))
+    ("$bind",   io (tv "a") ~> (tv "a" ~> io (tv "b")) ~> io (tv "b")),
+    ("div", tInt ~> tInt ~> tInt)
   ]
 
 types :: [NewType]

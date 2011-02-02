@@ -122,6 +122,12 @@ genExpr (ETyped ex t) = genExpr' t ex
     genExpr' t (EStr s) = do
       return . Ops.Const . strConst $ s
 
+    -- Integer division; this simply MUST be inlined!
+    genExpr' t (EApp (ETyped (EApp (ETyped (EVar (VIdent "div")) _) x) _) y) = do
+      x' <- genExpr x
+      y' <- genExpr y
+      return $ Call 1 (Ops.Ident $ Builtin "Math.floor") [Oper Div x' y']
+    
     -- Function application; generate code to obtain the function and to obtain
     -- the argument, then apply the function to the thunked argument.
     genExpr' t (EApp f x) = do

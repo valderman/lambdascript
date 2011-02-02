@@ -230,10 +230,14 @@ tiExpr as (EConcat xs ys) = do
   unify (list v) (eUntyped ys')
   return (as, eTyped (EConcat xs' ys') (list v))
 tiExpr as (EMul x y)  = tiNumOp as EMul x y
-tiExpr as (EMod x y)  = tiNumOp as EMod x y
 tiExpr as (EAdd x y)  = tiNumOp as EAdd x y
 tiExpr as (ESub x y)  = tiNumOp as ESub x y
-tiExpr as (EDiv x y)  = tiNumOp as EDiv x y
+tiExpr as (EMod x y)  = do (as, op) <- tiNumOp as EMod x y
+                           unify tInt (eUntyped op)
+                           return (as, op)
+tiExpr as (EDiv x y)  = do (as, op) <- tiNumOp as EDiv x y
+                           unify tDouble (eUntyped op)
+                           return (as, op)
 tiExpr as (EEq x y)   = tiComparison as EEq x y
 tiExpr as (ELT x y)   = tiComparison as ELT x y
 tiExpr as (EGT x y)   = tiComparison as EGT x y
@@ -324,6 +328,7 @@ tiNumOp as cons x y = do
   t <- newTVar >>= return . num
   unify t (eUntyped x')
   unify t (eUntyped y')
+  s <- getSubst
   return (as, eTyped (cons x' y') t)
 
 -- | Infer types for a comparison (EQ, LT, etc.) operator.
