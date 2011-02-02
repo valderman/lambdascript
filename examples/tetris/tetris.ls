@@ -189,9 +189,7 @@ start = do {
     linesLbl <- getElementById "lines";
     withCanvasDo "canvas" (\can -> (do {
           onKeyUp (keyHandler grpref fieldref can);
-          case linesLbl of (Just linesLbl') ->
-            main fieldref grpref 0 linesLbl' can;
-            ;
+          main fieldref grpref 0 (fromJust linesLbl) can {fromJust (Just x) = x;};
         }));
   };
 

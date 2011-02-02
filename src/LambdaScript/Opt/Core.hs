@@ -65,6 +65,12 @@ optS o (ExpStmt ex) =
 optS o NoStmt =
   NoStmt
 
+optS o Break =
+  Break
+
+optS o (Forever s) =
+  optStm o (Forever $ optS o s)
+
 optS o x =
   error $ "Can't optimize statement:\n" ++ show x
 
@@ -80,6 +86,9 @@ optE o (IOThunk e) =
 
 optE o (Eval e) =
   optExp o $ Eval (optE o e)
+
+optE o (StmtEx ss e) =
+  optExp o $ StmtEx (map (optS o) ss) (optE o e)
 
 optE o (Tailcall e) =
   optExp o $ Tailcall (optE o e)

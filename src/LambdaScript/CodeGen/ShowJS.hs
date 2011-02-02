@@ -4,11 +4,33 @@ import LambdaScript.CodeGen.Ops
 import qualified LambdaScript.Abs as A
 import Data.List (intercalate)
 
+-- | Collect statements from every StmtEx that should be executed here.
+--   Basically, collect everything until we reach either an if, a thunk or a
+--   lambda. We also don't go into the args of a function call, since those
+--   are all guaranteed to end in thunks anyway.
+getSS :: Exp -> [Stmt]
+getSS (StmtEx ss ex)    = ss ++ getSS ex
+getSS (Eval ex)         = getSS ex
+getSS (Tailcall ex)     = getSS ex
+getSS (Index ex ix)     = getSS ex ++ getSS ix
+getSS (Array exs)       = concat $ map getSS exs
+getSS (ConstrIs ex _ _) = getSS ex
+getSS (Cons x xs)       = getSS x ++ getSS xs
+getSS (Oper _ e1 e2)    = getSS e1 ++ getSS e2
+getSS (Neg ex)          = getSS ex
+getSS (Call _ f _)      = getSS f
+getSS _                 = []
+
+showSS :: Exp -> String
+showSS = concat . map show . getSS
+
 instance Show Exp where
   show (Thunk ex) =
-    "function _(){if(_.x===$u) _.x=" ++ show ex ++ ";return _.x;}"
+    "function _(){if(_.x===$u){" ++ showSS ex ++ "_.x=" ++ show ex ++ ";}return _.x;}"
   show (IOThunk ex) =
-    "function _(){return " ++ show ex ++ ";}"
+    "function _(){" ++ showSS ex ++ "return " ++ show ex ++ ";}"
+  show (StmtEx ss ex) =
+    show ex
   show (Eval ex) =
     show ex ++ "()"
   show (Tailcall ex) =
@@ -45,18 +67,21 @@ instance Show Exp where
 instance Show Stmt where
   show (SelfThunk id ss) =
     "if($u===$._" ++ id ++ ".x){" ++ concat (map show ss) ++ ";}return $._" ++ id ++ ".x;"
-  show (Assign v@(Global _ id) ex) = show v ++ " = " ++ show ex ++ ";\n"
-  show (Assign v ex) = "var " ++ show v ++ " = " ++ show ex ++ ";\n"
-  show (If ex th el) = "if(" ++ show ex ++ ") " ++
-                          show th ++ "\n" ++
-                          case el of
-                            Just ex -> "else " ++ show ex ++ "\n"
-                            _       -> ""
-  show (Return _ ex) = "return " ++ show ex ++ ";\n"
-  show (Block stmts) = "{\n" ++ concat (map show stmts) ++ "}"
-  show (NoStmt)      = ""
-  show (ExpStmt ex)  = show ex ++ ";\n"
-  show x             = error $ "No Show instance for some Stmt!"
+  show (Assign v@(Global _ id) ex) = showSS ex ++ show v ++ " = " ++ show ex ++ ";\n"
+  show (Assign v ex)  = showSS ex ++ "var " ++ show v ++ " = " ++ show ex ++ ";\n"
+  show (If ex th el)  = showSS ex++ 
+                        "if(" ++ show ex ++ ") " ++
+                           show th ++ "\n" ++
+                           case el of
+                             Just ex -> "else " ++ show ex ++ "\n"
+                             _       -> ""
+  show (Return _ ex)  = showSS ex ++ "return " ++ show ex ++ ";\n"
+  show (Block stmts)  = "{\n" ++ concat (map show stmts) ++ "}"
+  show (NoStmt)       = ""
+  show (ExpStmt ex)   = showSS ex ++ show ex ++ ";\n"
+  show (Forever body) = "for(;;){\n" ++ show body ++ "}\n"
+  show (Break)        = "break;\n"
+  show x              = error $ "No Show instance for some Stmt!"
 
 instance Show Oper where
   show Add = "+"

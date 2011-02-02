@@ -196,19 +196,20 @@ genExpr (ETyped ex t) = genExpr' t ex
 
     -- If expression; if(a) {v = thenEx;} else {v = elseEx;}
     genExpr' t (EIf cond ifE elE) = do
-      v <- newVar
-      ((), stmts) <- isolate $ do
+      res <- newStrict
+      (ex', stmts) <- isolate $ do
         cond' <- genExpr cond
       	(ifE', ifS) <- isolate $ genExpr ifE
       	(elE', elS) <- isolate $ genExpr elE
       	stmt $ If cond'
-                (Block $ ifS ++ [Return (nargs ifE) ifE'])
-                (Just . Block $ elS ++ [Return (nargs elE) elE'])
-      return $ Call 0 (FunExp $ Lambda [] (Block stmts)) []
+                (Block $ ifS ++ [Assign res ifE'])
+                (Just . Block $ elS ++ [Assign res elE'])
+      return $ StmtEx stmts (Ops.Ident res)
 
     -- Case expression; works pretty much like a lambda with an arbitrary
     -- number of bodies. (See also: recursive documentation)
     genExpr' t (ECase ex cps) = do
+      res <- newStrict
       ((), stmts) <- isolate $ do
         ex' <- genExpr ex
         ex'' <- if containsCall ex'
@@ -217,8 +218,8 @@ genExpr (ETyped ex t) = genExpr' t ex
                      stmt $ Assign v $ thunk ex'
                      return (eval $ Ops.Ident v)
                    else return ex'
-        genCPs ex'' cps >>= stmt
-      return $ Call 0 (FunExp $ Lambda [] (Block stmts)) []
+        genCPs ex'' res cps >>= stmt . Forever
+      return $ StmtEx stmts (Ops.Ident res)
      where
       containsCall (Thunk ex)        = containsCall ex
       containsCall (IOThunk ex)      = containsCall ex
@@ -358,11 +359,11 @@ genPList ex [] =
 --   to be matched against the pattern. Since all case expressions are executed
 --   within a closure as part of an expression, the result value should be
 --   returned.
-genCPs :: Exp -> [CasePattern] -> CG Stmt
-genCPs ex (CPNoGuards p thenDo : ps) = do
+genCPs :: Exp -> Var -> [CasePattern] -> CG Stmt
+genCPs ex res (CPNoGuards p thenDo : ps) = do
   (cond, bind) <- isolate $ genPat ex p
   (thenEx, thenStmts) <- isolate $ genExpr thenDo
-  (Block elsePart) <- genCPs ex ps
+  (Block elsePart) <- genCPs ex res ps
   -- We don't use the else part, because we need fall-through behaviour
   -- when we introduce guards into the mix. For example:
   -- foo (Just x) | x < 2 = bar
@@ -390,16 +391,16 @@ genCPs ex (CPNoGuards p thenDo : ps) = do
   return . Block $ (If cond
                        (Block $  bind
                               ++ thenStmts
-                              ++ [Return (nargs thenDo) thenEx])
+                              ++ [Assign res thenEx, Break])
                        Nothing) : elsePart
-genCPs ex (CPGuards p cases : ps) = do
+genCPs ex res (CPGuards p cases : ps) = do
   (cond, bind) <- isolate $ genPat ex p
-  gs <- mapM genGuard cases
-  (Block elsePart) <- genCPs ex ps
+  gs <- mapM (genGuard res) cases
+  (Block elsePart) <- genCPs ex res ps
   return . Block $ (If cond
                        (Block $ bind ++ gs)
                        Nothing) : elsePart
-genCPs ex [] = do
+genCPs ex _ [] = do
   return $ Block [lsError "non-exhaustive pattern in function!"]
 
 -- | Generate a guarded expression. Basically, if the guard holds we execute
@@ -407,10 +408,10 @@ genCPs ex [] = do
 --   otherwise do nothing.
 --   Since case expressions are executed within a closure as part of an
 --   expression, the result should be returned.
-genGuard :: GuardedCaseExpr -> CG Stmt
-genGuard (GuardedCaseExpr (GuardExpr ge) ex) = do
+genGuard :: Var -> GuardedCaseExpr -> CG Stmt
+genGuard res (GuardedCaseExpr (GuardExpr ge) ex) = do
   guard <- genExpr ge
   (expr, stmts) <- isolate $ genExpr ex
   return $ If guard
-              (Block $ stmts ++ [Return (nargs ex) expr])
+              (Block $ stmts ++ [Assign res expr, Break])
               Nothing

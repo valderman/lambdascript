@@ -9,6 +9,8 @@ data Exp
     -- IOThunk doesn't memoize its result.
   | IOThunk   Exp
   | Eval      Exp
+    -- An expression that needs supporting statements.
+  | StmtEx    [Stmt] Exp
   | Tailcall  Exp
     -- Use the second expression as an array index into the first
   | Index     Exp Exp
@@ -41,6 +43,8 @@ data Stmt
   | Return  Int Exp
   | Block   [Stmt]
   | ExpStmt Exp
+  | Forever Stmt
+  | Break
   | NoStmt
 
 -- | Operators
