@@ -11,7 +11,7 @@ inlineReturn = Opt {
   }
 
 inline :: Exp -> Exp
-inline (Call n (Ident (Import "io" "return")) [arg]) =
+inline (Call n (Ident (Import _ "io" "return")) [arg]) =
   Call n (FunExp $ Construct ((tv "a") ~> io (tv "a")) (-1)) [arg]
 inline x =
   x

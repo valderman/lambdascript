@@ -10,7 +10,7 @@ import LambdaScript.Lex (tokens)
 import LambdaScript.Abs as Abs
 import qualified LambdaScript.CodeGen.Module as M
 import LambdaScript.ErrM
-import LambdaScript.Types (Assump (..), Assumps, find)
+import LambdaScript.Types (Assump (..), Assumps, find, arity)
 import LambdaScript.TypeChecker (infer)
 import LambdaScript.CodeGen.Generate (generate)
 import LambdaScript.Opt.Optimize (applyOpts)
@@ -21,9 +21,6 @@ import System.IO.Unsafe
 
 -- TODO:
 -- * Detect and error out on dependency cycles.
--- * Make sure modules only get the imports they explicitly ask for. At the
---   moment, a module gets not only the asked-for imports, but also the imports
---   from each of its imports' imports and so on.
 -- * Add export lists for types; as things stand, ALL types are ALWAYS
 --   exported to everyone, which isn't all that desirable.
 -- * Warn when a local definition shadows an imported one and, preferrably,
@@ -38,18 +35,21 @@ make cfg = do
                    "" -> "."
                    s  -> s
       libpath = inputdir : extraLibDirs cfg ++ [libDir cfg]
-  (names, mods) <- buildModList fp libpath forcedName >>= return . unzip
+  namesMods <- buildModList fp libpath forcedName
   
   -- Create a module => exported functions mapping.
   -- If a module lacks an export statement, export nothing to othermodules.
   -- However, EVERYTHING is later exported to the user.
   let getExs (Module (Exports es) _ _) = es
-      getExs _                           = []
+      getExs _                         = []
+      (names, mods) = unzip namesMods
       exports = Map.fromList $ zip names (map getExs mods)
       -- Create a list of imports, in the same order as names and mods, with
       -- the functions each module imports.
       imports = map (mkImpList exports) mods
-      mods' = zipWith3 genModule names imports (checkList mods)
+      (checkedMods, typemap) = checkList namesMods
+      imports' = map (map (\(m, n) -> (arity $ typemap Map.! (m, n), m, n))) imports
+      mods' = zipWith3 genModule names imports' (map snd checkedMods)
   writeBundle (output cfg ++ ".js") (libDir cfg) mods'
   
   where
@@ -69,7 +69,7 @@ writeBundle fp libpath mods = do
 -- | Generate code for a module.
 genModule :: String             -- ^ Filename of the module to generate code
                                 --   for, sans extension.
-          -> [(String, String)] -- ^ (module, function) list of imports.
+          -> [(Int, String, String)] -- ^ (module, function) list of imports.
           -> Abs.Module         -- ^ The module itself in AST form.
           -> M.Module           -- ^ The final module.
 genModule n is (Module exs _ p) =
@@ -156,14 +156,19 @@ typeCheck as ts mod@(Module exs _ _) =
       nub $ concat $ map (\x -> filter (\(id :>: _) -> x == id) ys) xs
 
 -- | Type check a dependency ordered list of modules.
-checkList :: [Abs.Module] -> [Abs.Module]
-checkList ms =
-  case foldl' check ([],[],[]) ms of
-    (_, _, mods) -> reverse mods
+checkList :: [(String, Abs.Module)] -> ([(String, Abs.Module)], Map.Map (String, String) Type)
+checkList mods =
+  case foldl' check ([],[],[], Map.empty) mods of
+    (_, _, mods, typemap) -> (reverse mods, typemap)
   where
-    check (assump, types, mods) mod =
+    check (assump, types, mods, typemap) (name, mod) =
       case typeCheck assump types $ prepare mod of
-        (mod', types', assump') -> (assump', types', mod':mods)
+        (mod', types', assump') -> (assump', types', (name, mod'):mods, instypes typemap name mod')
+
+    instypes tmap name (Module ex _ (Program bgs)) =
+      foldl' (flip $ uncurry Map.insert) tmap $
+          [((name, id), t) | BGroup (BindGroup defs) <- bgs,
+                             ConstDef (Ident id) (ETyped _ t) <- defs]
 
 -- | Returns the module name of the given file.
 modName :: FilePath -> String

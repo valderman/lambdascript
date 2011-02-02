@@ -5,6 +5,7 @@ import LambdaScript.CodeGen.Ops as Ops
 import LambdaScript.CodeGen.Errors
 import LambdaScript.CodeGen.Module
 import LambdaScript.CodeGen.GenTypes
+import LambdaScript.Types (arity)
 import qualified Data.Map as M
 import Data.List (foldl1', foldl', unfoldr)
 import Control.Monad (foldM)
@@ -14,7 +15,7 @@ import System.IO.Unsafe
 
 -- | Generate code for all functions in a program. Takes a list of imports and
 --   a program to generate code for as its arguments.
-generate :: [(String, String)] -> Program -> [Function]
+generate :: [(Int, String, String)] -> Program -> [Function]
 generate imports p@(Program defs) =
   concat bgs
   where
@@ -36,7 +37,7 @@ generate imports p@(Program defs) =
       case concat $ map numberGroups defs of
         e -> M.fromList $
               e ++
-              map (\(m,n) -> (n, Ops.Import m n)) imports ++
+              map (\(ar,m,n) -> (n, Ops.Import ar m n)) imports ++
               builtins Builtin.functions
 
     builtins (BGroup (BindGroup defs)) =
@@ -91,10 +92,7 @@ allTrue = foldl1' (Oper And)
 -- | Returns the number of arguments the given expression would take when
 --   called as a function.
 nargs :: Expr -> Int
-nargs (ETyped _ t) = nargs' t
-  where
-    nargs' (TOp _ t) = 1+nargs' t
-    nargs' _         = 0
+nargs (ETyped _ t) = arity t
 
 -- | Generate code for an expression.
 genExpr :: Expr -> CG Exp

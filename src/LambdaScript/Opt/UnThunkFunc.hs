@@ -16,7 +16,7 @@ unEvalGlobals = Opt {
 unEvalGlobal :: Exp -> Exp
 unEvalGlobal (Call n (Eval f@(Ident (Global arity _))) args) | arity > 0 =
   Call n f (map thunkGlobal args)
-unEvalGlobal (Call n (Eval f@(Ident (Import _ a))) args) =
+unEvalGlobal (Call n (Eval f@(Ident (Import arity _ a))) args) | arity > 0 =
   Call n f (map thunkGlobal args)
 unEvalGlobal (Call n (Eval f@(Ident (Builtin a))) args) =
   Call n f (map thunkGlobal args)
@@ -25,7 +25,8 @@ unEvalGlobal (Call n f args) =
 unEvalGlobal x =
   x
 
-thunkGlobal g@(Ident (Global n _)) | n > 0 = Thunk g
+thunkGlobal g@(Ident (Global n _))   | n > 0 = Thunk g
+thunkGlobal g@(Ident (Import n _ _)) | n > 0 = Thunk g
 thunkGlobal x                              = x
 
 -- | Having global functions as thunks isn't really beneficial in any way.
@@ -40,8 +41,11 @@ unThunkFunc (Function n _ [Return arity (FunExp (Lambda as (Block b)))] t) =
 -- is impossible.
 unThunkFunc (Function n [] [Return arity ex] t) | arity > 0 =
   Function n [NamedTemp "a"] [
-      Return (arity-1) (Call arity ex [Ident $ NamedTemp "a"])
+      Return (arity-1) (Call arity (unEval ex) [Ident $ NamedTemp "a"])
     ] t
+  where
+    unEval (Eval ex) = ex
+    unEval ex        = ex
 unThunkFunc fun@(Function n _ b t) =
   case t of
     TApp (TCon (TIdent "IO")) _ ->

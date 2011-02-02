@@ -47,6 +47,12 @@ tArrow   = TCon $ TIdent "->"
 tTuple n = TCon $ TIdent ("(" ++ replicate n ',' ++ ")")
 tString  = list tChar
 
+-- | Return the arity of the given type. Of course, this only works with
+--   concrete types; a will always have arity 0 and Int -> a arity 1, etc.
+arity :: Type -> Int
+arity (TOp _ t) = 1+arity t
+arity _         = 0
+
 -- | Create a type from a type constructor and a list of type vars.
 mkADT :: TIdent -> [VIdent] -> Type
 mkADT id vs = foldl' TApp (TCon id) (map TVar vs)

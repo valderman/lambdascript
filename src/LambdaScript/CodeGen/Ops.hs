@@ -71,23 +71,23 @@ strConst = StrConst
 
 -- | Representation of a variable; basically just an ID.
 --   A global consists of an arity and a name, and a temp var is just a name.
---   An Import variable consists of a module name and a function name.
+--   An Import consists of an arity, a module name and a function name.
 data Var
   = Var Int
   | Global Int String
   | NamedTemp String
   | Strict Int
-  | Import String String
+  | Import Int String String
   | Builtin String
   deriving Eq
 
 instance Show Var where
-  show (Var n)       = '_' : show n
-  show (Global _ s)  = "$._" ++ s
-  show (NamedTemp s) = s
-  show (Strict n)    = '_' : show n
-  show (Import m s)  = m ++ "._" ++ s
-  show (Builtin s)   = s
+  show (Var n)         = '_' : show n
+  show (Global _ s)    = "$._" ++ s
+  show (NamedTemp s)   = s
+  show (Strict n)      = '_' : show n
+  show (Import _ m s)  = m ++ "._" ++ s
+  show (Builtin s)     = s
 
 instance Num Var where
   (Var a) + (Var b) = Var (a+b)
