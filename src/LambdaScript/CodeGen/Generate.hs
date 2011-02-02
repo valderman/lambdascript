@@ -246,7 +246,7 @@ genExpr (ETyped ex t) = genExpr' t ex
       where
         genDef (v, id, ex) = do
           ((), stmts) <- isolate $ function ex
-          stmt $ Assign v (FunExp $ Lambda [] (Block stmts))
+          stmt $ Assign v (Thunk $ Call 0 (FunExp $ Lambda [] (Block stmts)) [])
     
     -- Both (), [] and all other nullary constructors share the representation
     -- [0].

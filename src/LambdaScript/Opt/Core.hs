@@ -129,5 +129,8 @@ optE o (FunExp (Lambda vs s)) =
 optE o e@(FunExp _) =
   optExp o e
 
+optE o NoExp =
+  NoExp
+
 optE o x =
   error $ "Can't optimize expression:\n" ++ show x
