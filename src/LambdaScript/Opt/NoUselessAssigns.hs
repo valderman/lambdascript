@@ -17,6 +17,9 @@ findAs :: Stmt -> Maybe (Var, Var)
 findAs (Block stmts)         = listToMaybe . catMaybes $ map findAs stmts
 findAs (Assign v (Ident v')) = Just (v, v')
 findAs (SelfThunk _ stmts)   = listToMaybe . catMaybes $ map findAs stmts
+findAs (If _ th elm)         = case (findAs th, elm) of
+                                 (Nothing, Just el) -> findAs el
+                                 (th', _)           -> th'
 findAs (Return _ exp)        = findAsEx exp
 findAs _                     = Nothing
 
