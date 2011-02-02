@@ -69,6 +69,8 @@ instance Show Stmt where
     "if($u===$._" ++ id ++ ".x){" ++ concat (map show ss) ++ ";}return $._" ++ id ++ ".x;"
   show (Assign v@(Global _ id) ex) = showSS ex ++ show v ++ " = " ++ show ex ++ ";\n"
   show (Assign v ex)  = showSS ex ++ "var " ++ show v ++ " = " ++ show ex ++ ";\n"
+  show (AssignResult v ex) =
+    showSS ex ++ "var " ++ show v ++ " = " ++ show ex ++ ";\n"
   show (If ex th el)  = showSS ex++ 
                         "if(" ++ show ex ++ ") " ++
                            show th ++ "\n" ++

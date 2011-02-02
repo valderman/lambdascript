@@ -35,6 +35,8 @@ data Exp
 
 data Stmt
   = Assign Var Exp
+    -- AssignResult is an assignment that must not be optimized away.
+  | AssignResult Var Exp
   | SelfThunk String [Stmt]
   | If      Exp Stmt (Maybe Stmt)
     -- The first argument of the return primitive is the arity of the returned

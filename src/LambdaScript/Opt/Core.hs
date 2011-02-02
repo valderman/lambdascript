@@ -46,6 +46,9 @@ optS :: Opt -> Stmt -> Stmt
 optS o (Assign v e) =
   optStm o $ Assign v (optE o e)
   
+optS o (AssignResult v e) =
+  optStm o $ AssignResult v (optE o e)
+
 optS o (If e s ms) =
   optStm o $ If (optE o e) (optS o s) ms'
   where

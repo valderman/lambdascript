@@ -17,11 +17,19 @@ findAs :: Stmt -> Maybe (Var, Var)
 findAs (Block stmts)         = listToMaybe . catMaybes $ map findAs stmts
 findAs (Assign v (Ident v')) = Just (v, v')
 findAs (SelfThunk _ stmts)   = listToMaybe . catMaybes $ map findAs stmts
+findAs (If _ th elm)         = case (findAs th, elm) of
+                                 (Nothing, Just el) -> findAs el
+                                 (th', _)           -> th'
+findAs (Forever s)           = findAs s
 findAs (Return _ exp)        = findAsEx exp
+findAs (ExpStmt ex)          = findAsEx ex
 findAs _                     = Nothing
 
 findAsEx :: Exp -> Maybe (Var, Var)
 findAsEx (FunExp (Lambda _ s)) = findAs s
+findAsEx (StmtEx s e)          = case findAs (Block s) of
+                                   Nothing -> findAsEx e
+                                   x       -> x
 findAsEx _                     = Nothing
 
 removeAss :: Exp -> Exp

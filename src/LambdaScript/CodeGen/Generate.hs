@@ -202,8 +202,8 @@ genExpr (ETyped ex t) = genExpr' t ex
       	(ifE', ifS) <- isolate $ genExpr ifE
       	(elE', elS) <- isolate $ genExpr elE
       	stmt $ If cond'
-                (Block $ ifS ++ [Assign res ifE'])
-                (Just . Block $ elS ++ [Assign res elE'])
+                (Block $ ifS ++ [AssignResult res ifE'])
+                (Just . Block $ elS ++ [AssignResult res elE'])
       return $ StmtEx stmts (Ops.Ident res)
 
     -- Case expression; works pretty much like a lambda with an arbitrary
@@ -391,7 +391,7 @@ genCPs ex res (CPNoGuards p thenDo : ps) = do
   return . Block $ (If cond
                        (Block $  bind
                               ++ thenStmts
-                              ++ [Assign res thenEx, Break])
+                              ++ [AssignResult res thenEx, Break])
                        Nothing) : elsePart
 genCPs ex res (CPGuards p cases : ps) = do
   (cond, bind) <- isolate $ genPat ex p
@@ -413,5 +413,5 @@ genGuard res (GuardedCaseExpr (GuardExpr ge) ex) = do
   guard <- genExpr ge
   (expr, stmts) <- isolate $ genExpr ex
   return $ If guard
-              (Block $ stmts ++ [Assign res expr, Break])
+              (Block $ stmts ++ [AssignResult res expr, Break])
               Nothing
