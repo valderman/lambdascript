@@ -1,4 +1,5 @@
 * Restrict type imports/exports (see Make.hs for details.)
-* Find out why the code generator dislikes local functions.
+* Come up with a simple test case that triggers the Firefox JS bug where
+  variables that are bound in a closure under some circumstances get unbound.
 * The codegen doesn't memoize local thunks; that's quite horrible, so we need
   to fix it.
