@@ -53,6 +53,8 @@ tiDefs as defs =
                      ++ " lacks accompanying binding."
                                      | occursTwice id decls ->
                 fail $ "Declaring the type of " ++ id ++ " twice is illegal!"
+                                     | otherwise ->
+                checkAllTypesDeclared t
               TypeDef (NewType (TIdent id) _ _) | occursTwice id types ->
                 fail $ "Type name clash: " ++ id
               _ -> return ()
@@ -61,6 +63,26 @@ tiDefs as defs =
         (as, [])
         defs
   where
+    checkAllTypesDeclared (TCon (TIdent id)) =
+      case id of
+        "Int"              -> return ()
+        "Double"           -> return ()
+        "Bool"             -> return ()
+        "String"           -> return ()
+        "Char"             -> return ()
+        x | x `elem` types -> return ()
+        _                  -> fail $ "Type " ++ id ++ " was not declared."
+    checkAllTypesDeclared (TOp t u) =
+      checkAllTypesDeclared t >> checkAllTypesDeclared u
+    checkAllTypesDeclared (TApp t u) =
+      checkAllTypesDeclared t >> checkAllTypesDeclared u
+    checkAllTypesDeclared (TTup ts) =
+      mapM_ checkAllTypesDeclared ts
+    checkAllTypesDeclared (TLst t) =
+      checkAllTypesDeclared t
+    checkAllTypesDeclared _ =
+      return ()
+
     occursTwice x xs =
       x `elem` drop 1 (dropWhile (/= x) xs)
     decls =
