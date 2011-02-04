@@ -1,4 +1,4 @@
-export withCanvasDo, getCanvas, fillColor, fillRect;
+export withCanvasDo, getCanvas, fillColor, fillRect, Canvas, Color(..), Point(..);
 import io;
 import dom;
 

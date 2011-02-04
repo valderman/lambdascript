@@ -1,6 +1,7 @@
 -- This is basically a wrapper for the more useful DOM manipulation functions.
 export getElementById, parentNode, getAttr, setAttr, firstChild, lastChild,
-       nextSibling, prevSibling, childNodes, siblings, domElemValid;
+       nextSibling, prevSibling, childNodes, siblings, domElemValid,
+       DOMElement;
 import io;
 import std;
 

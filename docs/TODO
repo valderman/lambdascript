@@ -1,2 +1,1 @@
-* Restrict type imports/exports (see Make.hs for details.)
 * Local functions are suboptimal; they could be optimized a little.

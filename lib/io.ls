@@ -1,4 +1,4 @@
-export return, alert, setTimeout, mapM, random, sequence_, newIORef, readIORef, writeIORef, onKeyUp, clearKeyUp;
+export return, alert, setTimeout, mapM, random, sequence_, newIORef, readIORef, writeIORef, onKeyUp, clearKeyUp, IO, JSFun, IORef;
 
 -- Opaque data type representing a javascript funvtion.
 data JSFun = JSFun;

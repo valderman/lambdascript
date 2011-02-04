@@ -1,4 +1,4 @@
-export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length, zipWith, repeat;
+export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length, zipWith, repeat, Maybe(..), Either(..);
 
 data Maybe a = Nothing | Just a;
 

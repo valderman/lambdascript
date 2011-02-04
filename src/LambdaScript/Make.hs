@@ -21,8 +21,6 @@ import System.IO.Unsafe
 
 -- TODO:
 -- * Detect and error out on dependency cycles.
--- * Add export lists for types; as things stand, ALL types are ALWAYS
---   exported to everyone, which isn't all that desirable.
 -- * Warn when a local definition shadows an imported one and, preferrably,
 --   add some way of resolving such ambiguities.
 
@@ -56,7 +54,7 @@ make cfg = do
     -- Create the list of imports for the given module.
     mkImpList es (Module _ is _) =
       [(mod, fun) | Import (VIdent mod) <- is,
-                    Export (VIdent fun) <- es Map.! mod]
+                    ExpFun (VIdent fun) <- es Map.! mod]
 
 -- | Write a compiled module to file.
 writeBundle :: FilePath -> FilePath -> [M.Module] -> IO ()
@@ -84,7 +82,7 @@ genModule n is (Module exs _ p) =
     -- If there is no export list, export everything to the user.
     -- However, nothing is visible to other modules.
     exs' = case exs of
-      Exports exs -> map (\(Export (VIdent id)) -> id) exs
+      Exports exs -> [id | ExpFun (VIdent id) <- exs]
       _           -> map M.funName funcs
 
 -- | Returns the path of the file containing the given module.
@@ -141,14 +139,35 @@ prepare (Module exs is p) =
 typeCheck :: Assumps -> [NewType] -> Abs.Module -> (Abs.Module, [NewType], Assumps)
 typeCheck as ts mod@(Module exs _ _) =
   case infer as ts mod of
-    (mod', as', ts') -> (mod', ts ++ ts', prune as')
+    (mod', as', ts') -> (mod', pruneT ts', prune as')
   where
     -- Only keep symbols that we either got from another dependency or that
     -- we exported ourselves in the list of assumptions.
     prune as' =
-      allSyms (map (\(id :>: _) -> id) as ++
-               map (\(Export (VIdent x)) -> x) exs')
-              as'
+      allSyms (map (\(id :>: _) -> id) as ++ [x|ExpFun (VIdent x) <- exs']) as'
+    
+    -- Prune all non-exported types.
+    pruneT ts' =
+      foldl maybeAddType ts ts'
+
+    -- Add the type x to the list of exported types if it's supposed to be
+    -- exported; remove all constructors if those aren't allowed to leave the
+    -- module.
+    maybeAddType a x@(NewType (TIdent id) vars _) =
+      case findExpType id exs' of
+        Just (ExpFullType _) -> x:a
+        Just (ExpType _)     -> (NewType (TIdent id) vars []):a
+        _                    -> a
+
+    -- Find how a type is exported, if it is exported at all.
+    findExpType id (x:xs) =
+      case x of
+        ExpType (TIdent id')     | id == id' -> Just x
+        ExpFullType (TIdent id') | id == id' -> Just x
+        _                                    -> findExpType id xs
+    findExpType _ _ =
+      Nothing
+    
     exs' = case exs of
       Exports exs -> exs
       _           -> []

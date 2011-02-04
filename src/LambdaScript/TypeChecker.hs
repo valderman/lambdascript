@@ -32,7 +32,7 @@ infer as importTypes (Module exports is (Program defs)) =
     -- Our list of exports as a list of identifiers.
     exports' =
       case exports of
-        (Exports ex) -> map (\(Export (VIdent id)) -> id) ex
+        (Exports ex) -> [id | ExpFun (VIdent id) <- ex]
         _            -> []
 
     -- All locally defined types.
