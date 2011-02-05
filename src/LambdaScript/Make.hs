@@ -10,14 +10,13 @@ import LambdaScript.Lex (tokens)
 import LambdaScript.Abs as Abs
 import qualified LambdaScript.CodeGen.Module as M
 import LambdaScript.ErrM
-import LambdaScript.Types (Assump (..), Assumps, find, arity)
+import LambdaScript.Types (Assump (..), Assumps, find, arity, ID, Scheme (..), quantifyAll, Instantiate (..))
 import LambdaScript.TypeChecker (infer)
 import LambdaScript.CodeGen.Generate (generate)
 import LambdaScript.Opt.Optimize (applyOpts)
 import LambdaScript.Config (Cfg (..))
 import System.Directory (doesFileExist)
-
-import System.IO.Unsafe
+import Data.Maybe (isJust)
 
 -- TODO:
 -- * Detect and error out on dependency cycles.
@@ -45,8 +44,11 @@ make cfg = do
       -- Create a list of imports, in the same order as names and mods, with
       -- the functions each module imports.
       imports = map (mkImpList exports) mods
-      (checkedMods, typemap) = checkList namesMods
-      imports' = map (map (\(m, n) -> (arity $ typemap Map.! (m, n), m, n))) imports
+      (checkedMods, funmap, typemap) = checkList namesMods
+      -- Get the arity of the given function in the given module
+      ar m n = case funmap Map.! m Map.! n of
+                 Forall _ t -> arity t
+      imports' = map (map (\(m, n) -> (ar m n, m, n))) imports
       mods' = zipWith3 genModule names imports' (map snd checkedMods)
   writeBundle (output cfg ++ ".js") (libDir cfg) mods'
   
@@ -136,58 +138,72 @@ prepare (Module exs is p) =
 
 -- | Type check and annotate a module. Apart from the annotated module, also
 --   return the list of assumptions for the module.
-typeCheck :: Assumps -> [NewType] -> Abs.Module -> (Abs.Module, [NewType], Assumps)
+typeCheck :: Assumps -> [NewType] -> Abs.Module -> Abs.Module
 typeCheck as ts mod@(Module exs _ _) =
   case infer as ts mod of
-    (mod', as', ts') -> (mod', pruneT ts', prune as')
-  where
-    -- Only keep symbols that we either got from another dependency or that
-    -- we exported ourselves in the list of assumptions.
-    prune as' =
-      allSyms (map (\(id :>: _) -> id) as ++ [x|ExpFun (VIdent x) <- exs']) as'
-    
-    -- Prune all non-exported types.
-    pruneT ts' =
-      foldl maybeAddType ts ts'
-
-    -- Add the type x to the list of exported types if it's supposed to be
-    -- exported; remove all constructors if those aren't allowed to leave the
-    -- module.
-    maybeAddType a x@(NewType (TIdent id) vars _) =
-      case findExpType id exs' of
-        Just (ExpFullType _) -> x:a
-        Just (ExpType _)     -> (NewType (TIdent id) vars []):a
-        _                    -> a
-
-    -- Find how a type is exported, if it is exported at all.
-    findExpType id (x:xs) =
-      case x of
-        ExpType (TIdent id')     | id == id' -> Just x
-        ExpFullType (TIdent id') | id == id' -> Just x
-        _                                    -> findExpType id xs
-    findExpType _ _ =
-      Nothing
-    
-    exs' = case exs of
-      Exports exs -> exs
-      _           -> []
-    allSyms xs ys =
-      nub $ concat $ map (\x -> filter (\(id :>: _) -> x == id) ys) xs
+    (mod', as', ts') -> mod'
 
 -- | Type check a dependency ordered list of modules.
-checkList :: [(String, Abs.Module)] -> ([(String, Abs.Module)], Map.Map (String, String) Type)
+checkList :: [(String, Abs.Module)]
+          -> ([(String, Abs.Module)], Map.Map String (Map.Map String Scheme), Map.Map String [NewType])
 checkList mods =
-  case foldl' check ([],[],[], Map.empty) mods of
-    (_, _, mods, typemap) -> (reverse mods, typemap)
+  case foldl' check ([], Map.empty, Map.empty) mods of
+    (mods, funs, types) -> (reverse mods, funs, types)
   where
-    check (assump, types, mods, typemap) (name, mod) =
-      case typeCheck assump types $ prepare mod of
-        (mod', types', assump') -> (assump', types', (name, mod'):mods, instypes typemap name mod')
+    check (mods, expFuns, expTypes) (name, mod) =
+      case typeCheck (importedFuns expFuns mod)
+                     (importedTypes expTypes mod)
+                     (prepare mod) of
+        mod' -> ((name, mod'):mods,
+                 exportMap expFuns name mod',
+                 typeMap expTypes name mod')
 
-    instypes tmap name (Module ex _ (Program bgs)) =
-      foldl' (flip $ uncurry Map.insert) tmap $
-          [((name, id), t) | BGroup (BindGroup defs) <- bgs,
-                             ConstDef (Ident id) (ETyped _ t) <- defs]
+    -- Create a list of the functions the given module should import.
+    importedFuns expFuns (Module _ imports _) =
+      [k :>: v | Import (VIdent imp) <- imports,
+                 (k, v) <- Map.toList $ expFuns Map.! imp]
+
+    -- Create a list of the types the given module should import
+    importedTypes expTypes (Module _ imports _) =
+      concat [expTypes Map.! imp| Import (VIdent imp) <- imports]
+
+    -- Create a list of all the types the given module exports.
+    modTypeList (Module (Exports ex) _ (Program defs)) =
+      [theType | TypeDef t@(NewType _ _ _) <- defs,
+                 theType <- fullOrPartial t ex]
+    
+    -- Returns the given type, exported, either fully or partially according to
+    -- the export list. Or not at all. We use lists instead of Maybe so we can
+    -- use it with a list comprehension.
+    fullOrPartial t@(NewType (TIdent id) vars args) exs =
+      case typeExpMode id exs of
+        Just (ExpType _)     -> [NewType (TIdent id) vars []]
+        Just (ExpFullType _) -> [t]
+        _                    -> []
+
+    -- Return the export mode of the given type, if exported at all.
+    typeExpMode id (ex:exs) = 
+      case ex of
+        ExpType (TIdent id')     | id == id' -> Just ex
+        ExpFullType (TIdent id') | id == id' -> Just ex
+        _                                    -> typeExpMode id exs
+    typeExpMode _ _ =
+      Nothing
+
+    -- Create a new module => exported types map, based on the old one and a
+    -- new module.
+    typeMap oldmap name mod = Map.insert name (modTypeList mod) oldmap
+
+    -- Create a map of all the functions a given module exports.
+    modExportMap name (Module (Exports exs) _ (Program bgs)) =
+      foldl' (flip $ uncurry Map.insert) Map.empty $
+          [(id, quantifyAll t) | BGroup (BindGroup defs) <- bgs,
+                                 ConstDef (Ident id) (ETyped _ t) <- defs,
+                                 (ExpFun $ VIdent id) `elem` exs]
+
+    -- Calculate the new Map ModName (Map FunName Export) from an old one and
+    -- a new module.
+    exportMap oldmap name mod = Map.insert name (modExportMap name mod) oldmap
 
 -- | Returns the module name of the given file.
 modName :: FilePath -> String

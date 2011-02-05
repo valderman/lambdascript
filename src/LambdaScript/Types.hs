@@ -208,6 +208,19 @@ quantify vs t = Forall (length vs) (apply s t)
     vs' = filter (`elem` vs) (freeVars t)
     s   = zip vs' (map TGen [0..])
 
+-- | Quantify a type over all of its type variables. This is useful for
+--   situations when we know that the given type is final (that is, after
+--   completion of type inference.)
+quantifyAll :: Type -> Scheme
+quantifyAll t = quantify (allVars t) t
+  where
+    allVars (TVar v)   = [v]
+    allVars (TLst t)   = allVars t
+    allVars (TTup ts)  = foldl' union [] (map allVars ts)
+    allVars (TApp t u) = allVars t `union` allVars u
+    allVars (TOp t u)  = allVars t `union` allVars u
+    allVars _          = []
+
 data Assump = ID :>: Scheme deriving (Show, Eq)
 
 type Assumps = [Assump]

@@ -1,6 +1,7 @@
 export withCanvasDo, getCanvas, fillColor, fillRect, Canvas, Color(..), Point(..);
 import io;
 import dom;
+import std;
 
 -- Abstract data type representing a canvas object.
 data Canvas = Canvas DOMElement;
