@@ -43,6 +43,9 @@ optF o (Function n as ss t) =
 --   performed on child nodes (then and else branches, for example) before
 --   root nodes (the entire if statement.)
 optS :: Opt -> Stmt -> Stmt
+optS o (Tailcall e as) =
+  optStm o $ Tailcall (optE o e) (map (optE o) as)
+
 optS o (Assign v e) =
   optStm o $ Assign v (optE o e)
   
@@ -74,6 +77,9 @@ optS o Break =
 optS o (Forever s) =
   optStm o (Forever $ optS o s)
 
+optS o (SelfThunk n ss) =
+  optStm o $ SelfThunk n $ map (optS o) ss
+
 optS o x =
   error $ "Can't optimize statement:\n" ++ show x
 
@@ -92,9 +98,6 @@ optE o (Eval e) =
 
 optE o (StmtEx ss e) =
   optExp o $ StmtEx (map (optS o) ss) (optE o e)
-
-optE o (Tailcall e) =
-  optExp o $ Tailcall (optE o e)
 
 optE o (Index e1 e2) =
   optExp o $ Index (optE o e1) (optE o e2)

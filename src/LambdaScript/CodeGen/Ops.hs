@@ -11,7 +11,6 @@ data Exp
   | Eval      Exp
     -- An expression that needs supporting statements.
   | StmtEx    [Stmt] Exp
-  | Tailcall  Exp
     -- Use the second expression as an array index into the first
   | Index     Exp Exp
   | Array     [Exp]
@@ -46,6 +45,7 @@ data Stmt
   | Block   [Stmt]
   | ExpStmt Exp
   | Forever Stmt
+  | Tailcall Exp [Exp]
   | Break
   | NoStmt
 

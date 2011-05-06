@@ -11,7 +11,6 @@ import Data.List (intercalate)
 getSS :: Exp -> [Stmt]
 getSS (StmtEx ss ex)    = ss ++ getSS ex
 getSS (Eval ex)         = getSS ex
-getSS (Tailcall ex)     = getSS ex
 getSS (Index ex ix)     = getSS ex ++ getSS ix
 getSS (Array exs)       = concat $ map getSS exs
 getSS (ConstrIs ex _ _) = getSS ex
@@ -33,8 +32,6 @@ instance Show Exp where
     show ex
   show (Eval ex) =
     show ex ++ "()"
-  show (Tailcall ex) =
-    "_tc(" ++ show ex ++ ")"
   show (Index ex ix) =
     show ex ++ "[" ++ show ix ++ "]"
   show (Array exs) =
@@ -56,15 +53,15 @@ instance Show Exp where
   show (FunExp f) =
     show f
   show (Call _ f args) =
-    show f ++ "(" ++
-        intercalate "," (map show args) ++
-      ")"
+    "_t(" ++ show f ++ "," ++ show args ++ ")"
   show (NoExp) =
     ""
   show x =
     error $ "No Show instance for some Exp!"
 
 instance Show Stmt where
+  show (Tailcall ex args) =
+    "return {f:" ++ show ex ++ ",a:" ++ show args ++ "};"
   show (SelfThunk id ss) =
     "if($u===$._" ++ id ++ ".x){" ++ concat (map show ss) ++ ";}return $._" ++ id ++ ".x;"
   show (Assign v@(Global _ id) ex) = showSS ex ++ show v ++ " = " ++ show ex ++ ";\n"

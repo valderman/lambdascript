@@ -236,7 +236,6 @@ genExpr (ETyped ex t) = genExpr' t ex
       containsCall (Oper _ ex1 ex2)  = containsCall ex1 || containsCall ex2
       containsCall (Neg ex)          = containsCall ex
       containsCall (Call _ _ _)      = True
-      containsCall (Tailcall ex)     = True
       containsCall _                 = False
 
     -- Bindings; we just generate them and assign them to local vars.

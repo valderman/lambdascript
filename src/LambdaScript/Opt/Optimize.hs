@@ -16,6 +16,7 @@ import LambdaScript.Opt.UnThunkFunc
 import LambdaScript.Opt.InlineReturn
 import LambdaScript.Opt.InlineJSFun
 import LambdaScript.Opt.RemoveDeadCode
+import LambdaScript.Opt.TCE
 
 -- | The list of optimizations to apply to the list of functions. Optimizations
 --   are applied from left to right.
@@ -39,6 +40,9 @@ opts = [
   ]
 
 -- | Apply optimizations to the functions.
+--   Something worth noting about tail call elimination, is that
+--   foo = bar 10; is NOT a tail call but rather a constant assignment.
 applyOpts :: [Function] -> [Function]
 applyOpts fs =
-  map unThunkFunc $ foldl' (\fs o -> optimize o fs) fs opts
+  map (eliminateTailCalls . unThunkFunc)
+    $ foldl' (\fs o -> optimize o fs) fs opts
