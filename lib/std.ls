@@ -25,6 +25,7 @@ tail (_:xs) = xs;
 take :: Int -> [a] -> [a];
 take 0 _      = [];
 take n (x:xs) = x:take (n-1) xs;
+take _ _      = [];
 
 drop :: Int -> [a] -> [a];
 drop 0 xs     = xs;
