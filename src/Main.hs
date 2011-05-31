@@ -43,6 +43,7 @@ main = do
       putStrLn $
         "Usage: lsc [options] file\n\n" ++
         "List of options\n" ++
+        "--no-tce  Disable tail call elimination\n" ++
         "-m<name>  Force the name of the module to <name>\n" ++
         "-o<out>   Write the compiled bundle to <out>.js\n" ++
         "-L<dir>   Set the main library directory to <dir>. " ++
