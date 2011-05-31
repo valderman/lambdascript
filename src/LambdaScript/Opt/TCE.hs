@@ -1,52 +1,56 @@
 -- | Replace all instances of Return $ Call ... by Return Tailcall
 module LambdaScript.Opt.TCE (eliminateTailCalls) where
-import Data.List (intersect, foldl')
+import Data.List (intersect, foldl', union)
 import Data.Maybe (maybeToList)
 import LambdaScript.CodeGen.Ops
 import LambdaScript.CodeGen.Module
 import LambdaScript.Opt.Core
 
-uselessVars :: Function -> [Var]
+uselessVars :: [Var] -> Function -> [Var]
 uselessVars = uvF
 
-uvS :: Stmt -> [Var]
-uvS (Assign _ exp)              = uvE exp
-uvS (AssignResult _ exp)        = uvE exp
--- Be very conservative about tail calls for a start;
--- let y = f x in if foo then y else something_else does NOT contain
--- a tail call!
-uvS (If ex s1 s2)               = uvE ex ++ 
-                                  (uvS s1 `intersect`
-                                   (concat $ maybeToList $ fmap uvS s2))
-uvS (Return n (Ident v))        = [v]
-uvS (Return n (Eval (Ident v))) = [v]
-uvS (Return n (StmtEx ss (Ident v))) =
-  v:concat (map uvS ss)
-uvS (Return n (StmtEx ss (Eval (Ident v)))) =
-  v:concat (map uvS ss)
-uvS (Return n x)                = uvE x
-uvS (Block ss)                  = concat $ map uvS ss
-uvS (ExpStmt ex)                = uvE ex
-uvS (Forever s)                 = uvS s
-uvS _                           = []
+uvS :: [Var] -> Stmt -> [Var]
+uvS vs (Assign v (Ident v')) | v `elem` vs =
+  [v']
+uvS vs (Assign _ exp) =
+  uvE vs exp
+uvS vs (AssignResult v (Ident v')) | v `elem` vs =
+  [v']
+uvS vs (AssignResult v (StmtEx _ (Ident v'))) | v `elem` vs =
+  [v']
+uvS vs (AssignResult _ exp) =
+  uvE vs exp
+uvS vs (If ex s1 s2) =
+  uvE vs ex ++ uvS vs s1 ++ (concat $ maybeToList $ fmap (uvS vs) s2)
+uvS vs (Return n (Ident v))        = [v]
+uvS vs (Return n (Eval (Ident v))) = [v]
+uvS vs (Return n (StmtEx ss (Ident v))) =
+  v:concat (map (uvS vs) ss)
+uvS vs (Return n (StmtEx ss (Eval (Ident v)))) =
+  v:concat (map (uvS vs) ss)
+uvS vs (Return n x)                = uvE vs x
+uvS vs (Block ss)                  = concat $ map (uvS vs) ss
+uvS vs (ExpStmt ex)                = uvE vs ex
+uvS vs (Forever s)                 = uvS vs s
+uvS _ _                           = []
 
-uvE :: Exp -> [Var]
-uvE (Thunk ex) = uvE ex
-uvE (IOThunk ex) = uvE ex
-uvE (Eval ex) = uvE ex
-uvE (StmtEx ss ex) = concat $ uvE ex : map uvS ss
-uvE (Index e1 e2) = uvE e1 ++ uvE e2
-uvE (Array exs) = concat $ map uvE exs
-uvE (ConstrIs e _ _) = uvE e
-uvE (Cons e1 e2) = uvE e1 ++ uvE e2
-uvE (Oper _ e1 e2) = uvE e1 ++ uvE e2
-uvE (Neg e) = uvE e
-uvE (Call _ e es) = concat $ map uvE (e:es)
-uvE (FunExp (Lambda _ s)) = uvS s
-uvE _ = []
+uvE :: [Var] -> Exp -> [Var]
+uvE vs (Thunk ex) = uvE vs ex
+uvE vs (IOThunk ex) = uvE vs ex
+uvE vs (Eval ex) = uvE vs ex
+uvE vs (StmtEx ss ex) = concat $ uvE vs ex : map (uvS vs) ss
+uvE vs (Index e1 e2) = uvE vs e1 ++ uvE vs e2
+uvE vs (Array exs) = concat $ map (uvE vs) exs
+uvE vs (ConstrIs e _ _) = uvE vs e
+uvE vs (Cons e1 e2) = uvE vs e1 ++ uvE vs e2
+uvE vs (Oper _ e1 e2) = uvE vs e1 ++ uvE vs e2
+uvE vs (Neg e) = uvE vs e
+uvE vs (Call _ e es) = concat $ map (uvE vs) (e:es)
+uvE vs (FunExp (Lambda _ s)) = uvS vs s
+uvE _ _ = []
 
-uvF :: Function -> [Var]
-uvF (Function _ _ ss _) = concat $ map uvS ss
+uvF :: [Var] -> Function -> [Var]
+uvF vs (Function _ _ ss _) = concat $ map (uvS vs) ss
 
 
 assToTailcalls :: Var -> Opt
@@ -79,5 +83,12 @@ eliminateTailCalls :: Function -> Function
 eliminateTailCalls f =
   foldl' eliminateTC (optimize retToTailcalls f) vs
   where
-    vs = uselessVars f
+    vs = uvars f []
+    -- Any var that's returned without being part of a larger expression
+    -- is a "useless" variable; if its value is the return value of a function
+    -- call, that call is a candidate for tail call elimination.
+    uvars f uv = let uv' = uv `union` uselessVars uv f in
+      if length uv /= length uv'
+         then uvars f uv'
+         else uv'
     eliminateTC f v = optimize (assToTailcalls v) f
