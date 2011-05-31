@@ -10,10 +10,13 @@ handlers = [
     startsWith "-o"   ==> setOutput,
     startsWith "-L"   ==> setLibDir,
     startsWith "-l"   ==> setExtraLibDirs,
+    (== "--no-tce")   ==> noTailCalls,
     ((/= '-') . head) ==> setFileName,
     (== "--help")     ==> showHelp
   ]
 
+noTailCalls _ _ (Right cfg) =
+  Ok $ Right $ cfg {tailcalls = False}
 showHelp _ _ _ =
   Ok $ Left ()
 setFileName name _ (Right cfg) =

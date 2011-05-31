@@ -16,8 +16,10 @@ data Cfg = Cfg {
     output :: String,       -- ^ The file to write the comiled bundle to, sans
                             --   file extension which will always be .js.
                             --   Default: "a.out"
-    input :: String         -- ^ The file to compile.
+    input :: String,        -- ^ The file to compile.
                             --   Default: ""
+    tailcalls :: Bool       -- ^ Whether to optimize tail calls or not.
+                            --   Default: True
   } deriving Show
 
 -- | The default configuration.
@@ -27,5 +29,6 @@ defCfg = Cfg {
     libDir = "./lib",
     extraLibDirs = [],
     output = "a.out",
-    input = ""
+    input = "",
+    tailcalls = True
   }

@@ -42,7 +42,9 @@ opts = [
 -- | Apply optimizations to the functions.
 --   Something worth noting about tail call elimination, is that
 --   foo = bar 10; is NOT a tail call but rather a constant assignment.
-applyOpts :: [Function] -> [Function]
-applyOpts fs =
-  map (eliminateTailCalls . unThunkFunc)
+applyOpts :: Bool       -- ^ Eliminate tail calls?
+          -> [Function] -- ^ Functions to optimize
+          -> [Function]
+applyOpts tce fs =
+  map ((if tce then eliminateTailCalls else id) . unThunkFunc)
     $ foldl' (\fs o -> optimize o fs) fs opts

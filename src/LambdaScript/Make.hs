@@ -49,7 +49,7 @@ make cfg = do
       ar m n = case funmap Map.! m Map.! n of
                  Forall _ t -> arity t
       imports' = map (map (\(m, n) -> (ar m n, m, n))) imports
-      mods' = zipWith3 genModule names imports' (map snd checkedMods)
+      mods' = zipWith3 (genModule cfg) names imports' (map snd checkedMods)
   writeBundle (output cfg ++ ".js") (libDir cfg) mods'
   
   where
@@ -67,19 +67,20 @@ writeBundle fp libpath mods = do
   writeFile fp $ rt ++ concat (map show mods)
 
 -- | Generate code for a module.
-genModule :: String             -- ^ Filename of the module to generate code
+genModule :: Cfg                -- ^ Configuration to use for codegen.
+          -> String             -- ^ Filename of the module to generate code
                                 --   for, sans extension.
           -> [(Int, String, String)] -- ^ (module, function) list of imports.
           -> Abs.Module         -- ^ The module itself in AST form.
           -> M.Module           -- ^ The final module.
-genModule n is (Module exs _ p) =
+genModule cfg n is (Module exs _ p) =
   M.Module {
       M.modName = n,
       M.funcs   = funcs,
       M.exports = exs'
     }
   where
-    funcs = applyOpts $ generate is p
+    funcs = applyOpts (tailcalls cfg) $ generate is p
 
     -- If there is no export list, export everything to the user.
     -- However, nothing is visible to other modules.
