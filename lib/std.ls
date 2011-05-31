@@ -1,4 +1,4 @@
-export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length, zipWith, repeat, Maybe(..), Either(..);
+export map, head, tail, take, drop, fst, snd, reverse, filter, otherwise, undefined, length, zipWith, repeat, Maybe(..), Either(..), span;
 
 data Maybe a = Nothing | Just a;
 
@@ -31,6 +31,12 @@ drop :: Int -> [a] -> [a];
 drop 0 xs     = xs;
 drop n (_:xs) = drop (n-1) xs;
 drop _ _      = [];
+
+span :: Int -> [a] -> ([a], [a]);
+span 0 xs     = ([], xs);
+span n (x:xs) = case span (n-1) xs of
+                  (xs', ys) -> (x:xs', ys);;
+span _ _      = ([], []);
 
 reverse :: [a] -> [a];
 reverse = reverse' [] {
