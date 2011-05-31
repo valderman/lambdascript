@@ -2,7 +2,10 @@ jlc:
 	make -C src
 
 test:
-	./runtests.sh
+	@echo "Running tests with TCE..."
+	@./runtests.sh
+	@echo "Running tests without TCE, expect any TCE-dependent test cases to fail!"
+	@LSCFLAGS=--no-tce ./runtests.sh
 
 failed:
 	./runtests.sh --failed
