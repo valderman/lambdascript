@@ -16,7 +16,7 @@ recompile() {
 test_lib() {
     echo "Building all libs for sanity check..."
     for f in $(ls lib | egrep '\.ls$') ; do
-        if ./lsc "lib/$f" > /dev/null 2> /dev/null ; then
+        if ./lsc $LSCFLAGS "lib/$f" > /dev/null 2> /dev/null ; then
             echo -n # All's well!
         else
             echo "Building $f failed miserably!"
@@ -38,7 +38,7 @@ test_all() {
     echo "Running good tests..."
     for f in tests/should-work/*; do
 	let goodtotal=$goodtotal+1
-	if ./lsc -mmain "$f" > /dev/null 2> /dev/null ; then
+	if ./lsc $LSCFLAGS -mmain "$f" > /dev/null 2> /dev/null ; then
 	    # blah.ls -> blah.js
 	    jsfile=a.out.js
 	    echo "print(main.main());" >> $jsfile
@@ -71,7 +71,7 @@ test_all() {
     echo "Running bad tests..."
     for f in tests/should-fail/*; do
 	let failtotal=$failtotal+1
-	if ./lsc "$f" > /dev/null 2> /dev/null ; then
+	if ./lsc $LSCFLAGS "$f" > /dev/null 2> /dev/null ; then
             echo "FAILED: $f"
 	    echo "$f" >> failed-bad
 	else
@@ -94,7 +94,7 @@ test_failed() {
     echo "Running good tests..."
     for f in `cat failed-good`; do
 	let goodtotal=$goodtotal+1
-	if ./lsc -mmain "$f" ; then
+	if ./lsc $LSCFLAGS -mmain "$f" ; then
             let goodpassed=$goodpassed+1
 	else
             echo "FAILED: $f"
@@ -107,7 +107,7 @@ test_failed() {
     echo "Running bad tests..."
     for f in `cat failed-bad`; do
 	let failtotal=$failtotal+1
-	if ./lsc "$f" ; then
+	if ./lsc $LSCFLAGS "$f" ; then
             echo "FAILED: $f"
 	else
             let failpassed=$failpassed+1
