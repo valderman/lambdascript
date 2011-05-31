@@ -76,16 +76,22 @@ instance ShowJS Exp where
     "!(" ++ showJS c ex ++ ")"
   showJS c (FunExp f) =
     showJS c f
-  showJS c (Call _ f args) =
-    "_t(" ++ showJS c f ++ "," ++ showJS c args ++ ")"
+  showJS c (Call _ f args) 
+    | tailcalls c =
+      "_t(" ++ showJS c f ++ "," ++ showJS c args ++ ")"
+    | otherwise =
+      showJS c f ++ "(" ++ intercalate "," (map (showJS c) args) ++ ")"
   showJS c (NoExp) =
     ""
   showJS c x =
     error $ "No ShowJS instance for some Exp!"
 
 instance ShowJS Stmt where
-  showJS c (Tailcall ex args) =
-    "return {f:" ++ showJS c ex ++ ",a:" ++ showJS c args ++ "};"
+  showJS c (Tailcall ex args)
+    | tailcalls c =
+      "return {f:" ++ showJS c ex ++ ",a:" ++ showJS c args ++ "};"
+    | otherwise =
+      "return " ++ showJS c ex ++ "(" ++ intercalate "," (map (showJS c) args) ++ ");"
   showJS c (SelfThunk id ss) =
     "if($u===$._" ++ id ++ ".x){" ++ concat (map (showJS c) ss) ++ ";}return $._" ++ id ++ ".x;"
   showJS c (Assign v@(Global _ id) ex) = showSS c ex ++ showJS c v ++ " = " ++ showJS c ex ++ ";\n"
