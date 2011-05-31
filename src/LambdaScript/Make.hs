@@ -15,6 +15,7 @@ import LambdaScript.TypeChecker (infer)
 import LambdaScript.CodeGen.Generate (generate)
 import LambdaScript.Opt.Optimize (applyOpts)
 import LambdaScript.Config (Cfg (..))
+import LambdaScript.CodeGen.ShowJS (ShowJS (..))
 import System.Directory (doesFileExist)
 import Data.Maybe (isJust)
 
@@ -50,7 +51,7 @@ make cfg = do
                  Forall _ t -> arity t
       imports' = map (map (\(m, n) -> (ar m n, m, n))) imports
       mods' = zipWith3 (genModule cfg) names imports' (map snd checkedMods)
-  writeBundle (output cfg ++ ".js") (libDir cfg) mods'
+  writeBundle (output cfg ++ ".js") (libDir cfg) cfg mods'
   
   where
     -- Create the list of imports for the given module.
@@ -59,12 +60,12 @@ make cfg = do
                     ExpFun (VIdent fun) <- es Map.! mod]
 
 -- | Write a compiled module to file.
-writeBundle :: FilePath -> FilePath -> [M.Module] -> IO ()
-writeBundle fp libpath mods = do
+writeBundle :: FilePath -> FilePath -> Cfg -> [M.Module] -> IO ()
+writeBundle fp libpath cfg mods = do
   runtime <- readFile $ libpath ++ "/runtime.js"
   -- Strip comments from the runtime
   let rt = unlines [x | x <- lines runtime, not (null x) && take 2 x /= "//"]
-  writeFile fp $ rt ++ concat (map show mods)
+  writeFile fp $ rt ++ concat (map (showJS cfg) mods)
 
 -- | Generate code for a module.
 genModule :: Cfg                -- ^ Configuration to use for codegen.

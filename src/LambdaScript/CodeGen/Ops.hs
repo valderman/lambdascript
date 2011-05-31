@@ -31,6 +31,7 @@ data Exp
     -- into \a b -> ...
   | Call      Int Exp [Exp]
   | NoExp
+    deriving Show
 
 data Stmt
   = Assign Var Exp
@@ -48,18 +49,21 @@ data Stmt
   | Tailcall Exp [Exp]
   | Break
   | NoStmt
+    deriving Show
 
 -- | Operators
 data Oper
   = Add | Sub | Mul | Div | Mod
   | And | Or
   | Eq  | Lt  | Gt  | Le  | Ge | Ne
+    deriving Show
 
 -- | Functions
 data Fun
   = FunIdent  String
   | Lambda    [Var]  Stmt
   | Construct Type   ConstrID
+    deriving Show
 
 type NamedFunction = (String, [Var], Stmt)
 
@@ -71,6 +75,7 @@ data Const
   | InlineStrConst String
   | BoolConst      Bool
   | EmptyListConst
+    deriving Show
 
 strConst :: String -> Const
 strConst = StrConst

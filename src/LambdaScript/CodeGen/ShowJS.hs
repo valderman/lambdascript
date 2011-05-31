@@ -1,5 +1,7 @@
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
 -- | Turns LS intermediate representation into JS.
 module LambdaScript.CodeGen.ShowJS where
+import LambdaScript.Config (Cfg (..))
 import LambdaScript.CodeGen.Ops
 import qualified LambdaScript.Abs as A
 import Data.List (intercalate)
@@ -20,102 +22,124 @@ getSS (Neg ex)          = getSS ex
 getSS (Call _ f _)      = getSS f
 getSS _                 = []
 
-showSS :: Exp -> String
-showSS = concat . map show . getSS
+showSS :: Cfg -> Exp -> String
+showSS c = concat . map (showJS c) . getSS
 
-instance Show Exp where
-  show (Thunk ex) =
-    "function _(){if(_.x===$u){" ++ showSS ex ++ "_.x=" ++ show ex ++ ";}return _.x;}"
-  show (IOThunk ex) =
-    "function _(){" ++ showSS ex ++ "return " ++ show ex ++ ";}"
-  show (StmtEx ss ex) =
-    show ex
-  show (Eval ex) =
-    show ex ++ "()"
-  show (Index ex ix) =
-    show ex ++ "[" ++ show ix ++ "]"
-  show (Array exs) =
-    "[" ++ intercalate "," (map show exs) ++ "]"
-  show (ConstrIs e 0 v) =
-    "!(" ++ show v ++ "=" ++ show e ++ ")[0]"
-  show (ConstrIs e c v) =
-    "(" ++ show v ++ "=" ++ show e ++ ")[0]" ++ " == " ++ show c
-  show (Cons x xs) =
-    "[1," ++ show x ++ "," ++ show xs ++ "]"
-  show (Const c) =
-    show c
-  show (Ident v) =
-    show v
-  show (Oper o e1 e2) =
-    "(" ++ show e1 ++ ")" ++ show o ++ "(" ++ show e2 ++ ")"
-  show (Neg ex) =
-    "!(" ++ show ex ++ ")"
-  show (FunExp f) =
-    show f
-  show (Call _ f args) =
-    "_t(" ++ show f ++ "," ++ show args ++ ")"
-  show (NoExp) =
+class ShowJS a where
+  showJS :: Cfg -> a -> String
+
+instance ShowJS String where
+  showJS _ = show
+
+instance ShowJS Double where
+  showJS _ = show
+
+instance ShowJS Int where
+  showJS _ = show
+
+instance ShowJS [Exp] where
+  showJS c exs =
+    "[" ++ intercalate "," (map (showJS c) exs) ++ "]"
+
+instance ShowJS ConstrID where
+  showJS _ = show
+
+instance ShowJS Var where
+  showJS _ = show
+
+instance ShowJS Exp where
+  showJS c (Thunk ex) =
+    "function _(){if(_.x===$u){" ++ showSS c ex ++ "_.x=" ++ showJS c ex ++ ";}return _.x;}"
+  showJS c (IOThunk ex) =
+    "function _(){" ++ showSS c ex ++ "return " ++ showJS c ex ++ ";}"
+  showJS c (StmtEx ss ex) =
+    showJS c ex
+  showJS c (Eval ex) =
+    showJS c ex ++ "()"
+  showJS c (Index ex ix) =
+    showJS c ex ++ "[" ++ showJS c ix ++ "]"
+  showJS c (Array exs) =
+    "[" ++ intercalate "," (map (showJS c) exs) ++ "]"
+  showJS c (ConstrIs e 0 v) =
+    "!(" ++ showJS c v ++ "=" ++ showJS c e ++ ")[0]"
+  showJS cfg (ConstrIs e c v) =
+    "(" ++ showJS cfg v ++ "=" ++ showJS cfg e ++ ")[0]" ++ " == " ++ showJS cfg c
+  showJS c (Cons x xs) =
+    "[1," ++ showJS c x ++ "," ++ showJS c xs ++ "]"
+  showJS cfg (Const c) =
+    showJS cfg c
+  showJS c (Ident v) =
+    showJS c v
+  showJS c (Oper o e1 e2) =
+    "(" ++ showJS c e1 ++ ")" ++ showJS c o ++ "(" ++ showJS c e2 ++ ")"
+  showJS c (Neg ex) =
+    "!(" ++ showJS c ex ++ ")"
+  showJS c (FunExp f) =
+    showJS c f
+  showJS c (Call _ f args) =
+    "_t(" ++ showJS c f ++ "," ++ showJS c args ++ ")"
+  showJS c (NoExp) =
     ""
-  show x =
-    error $ "No Show instance for some Exp!"
+  showJS c x =
+    error $ "No ShowJS instance for some Exp!"
 
-instance Show Stmt where
-  show (Tailcall ex args) =
-    "return {f:" ++ show ex ++ ",a:" ++ show args ++ "};"
-  show (SelfThunk id ss) =
-    "if($u===$._" ++ id ++ ".x){" ++ concat (map show ss) ++ ";}return $._" ++ id ++ ".x;"
-  show (Assign v@(Global _ id) ex) = showSS ex ++ show v ++ " = " ++ show ex ++ ";\n"
-  show (Assign v ex)  = showSS ex ++ "var " ++ show v ++ " = " ++ show ex ++ ";\n"
-  show (AssignResult v ex) =
-    showSS ex ++ "var " ++ show v ++ " = " ++ show ex ++ ";\n"
-  show (If ex th el)  = showSS ex++ 
-                        "if(" ++ show ex ++ ") " ++
-                           show th ++ "\n" ++
+instance ShowJS Stmt where
+  showJS c (Tailcall ex args) =
+    "return {f:" ++ showJS c ex ++ ",a:" ++ showJS c args ++ "};"
+  showJS c (SelfThunk id ss) =
+    "if($u===$._" ++ id ++ ".x){" ++ concat (map (showJS c) ss) ++ ";}return $._" ++ id ++ ".x;"
+  showJS c (Assign v@(Global _ id) ex) = showSS c ex ++ showJS c v ++ " = " ++ showJS c ex ++ ";\n"
+  showJS c (Assign v ex)  = showSS c ex ++ "var " ++ showJS c v ++ " = " ++ showJS c ex ++ ";\n"
+  showJS c (AssignResult v ex) =
+    showSS c ex ++ "var " ++ showJS c v ++ " = " ++ showJS c ex ++ ";\n"
+  showJS c (If ex th el)  = showSS c ex++ 
+                        "if(" ++ showJS c ex ++ ") " ++
+                           showJS c th ++ "\n" ++
                            case el of
-                             Just ex -> "else " ++ show ex ++ "\n"
+                             Just ex -> "else " ++ showJS c ex ++ "\n"
                              _       -> ""
-  show (Return _ ex)  = showSS ex ++ "return " ++ show ex ++ ";\n"
-  show (Block stmts)  = "{\n" ++ concat (map show stmts) ++ "}"
-  show (NoStmt)       = ""
-  show (ExpStmt ex)   = showSS ex ++ show ex ++ ";\n"
-  show (Forever body) = "for(;;){\n" ++ show body ++ "}\n"
-  show (Break)        = "break;\n"
-  show x              = error $ "No Show instance for some Stmt!"
+  showJS c (Return _ ex)  = showSS c ex ++ "return " ++ showJS c ex ++ ";\n"
+  showJS c (Block stmts)  = "{\n" ++ concat (map (showJS c) stmts) ++ "}"
+  showJS c (NoStmt)       = ""
+  showJS c (ExpStmt ex)   = showSS c ex ++ showJS c ex ++ ";\n"
+  showJS c (Forever body) = "for(;;){\n" ++ showJS c body ++ "}\n"
+  showJS c (Break)        = "break;\n"
+  showJS c x              = error $ "No ShowJS instance for some Stmt!"
 
-instance Show Oper where
-  show Add = "+"
-  show Sub = "-"
-  show Mul = "*"
-  show Div = "/"
-  show Mod = "%"
-  show And = "&&"
-  show Or  = "||"
-  show Eq  = "=="
-  show Lt  = "<"
-  show Gt  = ">"
-  show Le  = "<="
-  show Ge  = ">="
-  show Ne  = "!="
-  show x   = error $ "No Show instance for some operator!"
+instance ShowJS Oper where
+  showJS c Add = "+"
+  showJS c Sub = "-"
+  showJS c Mul = "*"
+  showJS c Div = "/"
+  showJS c Mod = "%"
+  showJS c And = "&&"
+  showJS c Or  = "||"
+  showJS c Eq  = "=="
+  showJS c Lt  = "<"
+  showJS c Gt  = ">"
+  showJS c Le  = "<="
+  showJS c Ge  = ">="
+  showJS c Ne  = "!="
+  showJS c x   = error $ "No ShowJS instance for some operator!"
 
-instance Show Fun where
-  show (FunIdent str)   = str
-  show (Lambda as st)   = "function(" ++ intercalate "," (map show as) ++
-                          ")" ++ show st ++ "\n"
-  show (Construct t id) = "_C(" ++ show (numArgs t) ++ "," ++ show id ++ ")"
+instance ShowJS Fun where
+  showJS c (FunIdent str)   = str
+  showJS c (Lambda as st)   = "function(" ++ intercalate "," (map (showJS c) as) ++
+                          ")" ++ showJS c st ++ "\n"
+  showJS c (Construct t id) = "_C(" ++ showJS c (numArgs t::Int) ++ "," ++ showJS c id ++ ")"
     where
       numArgs (A.TOp _ t) = numArgs t + 1
       numArgs _           = 0
-  show x                = error $ "No Show instance for some Fun!"
+  showJS c x                = error $ "No ShowJS instance for some Fun!"
 
-instance Show Const where
-  show (NumConst d)       = if snd (properFraction d) /= 0
-                               then show d
-                               else show (truncate d)
-  show (CharConst c)      = ['\'', c, '\'']
-  show (StrConst s)       = "_s(" ++ show s ++ ")"
-  show (InlineStrConst s) = s
-  show (BoolConst True)   = "1"
-  show (BoolConst False)  = "0"
-  show (EmptyListConst)   = "[0]"
-  show x                  = error $ "No Show instance for some Const!"
+instance ShowJS Const where
+  showJS c (NumConst d)       = if snd (properFraction d) /= 0
+                               then showJS c d
+                               else showJS c (truncate d::Int)
+  showJS cfg (CharConst c)    = ['\'', c, '\'']
+  showJS c (StrConst s)       = "_s(" ++ showJS c s ++ ")"
+  showJS c (InlineStrConst s) = s
+  showJS c (BoolConst True)   = "1"
+  showJS c (BoolConst False)  = "0"
+  showJS c (EmptyListConst)   = "[0]"
+  showJS c x                  = error $ "No ShowJS instance for some Const!"

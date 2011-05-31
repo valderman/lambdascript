@@ -13,16 +13,12 @@ data Function = Function {
     funType :: Type
   }
 
-instance Show Function where
-  show f =
+instance ShowJS Function where
+  showJS c f =
     "$._" ++ funName f ++ " = function(" ++ arglist ++ ")" ++
-    show (Block $ stmts f) ++ ";\n"
+    showJS c (Block $ stmts f) ++ ";\n"
     where
-      arglist = intercalate "," (map show (args f))
-  showList (f:fs) =
-    \x -> showList fs (show f) ++ x
-  showList _ =
-    id
+      arglist = intercalate "," (map (showJS c) (args f))
 
 -- | Data type representing a single module.
 data Module = Module {
@@ -31,10 +27,10 @@ data Module = Module {
     funcs   :: [Function]
   }
 
-instance Show Module where
-  show (Module name exports funcs) =
+instance ShowJS Module where
+  showJS c (Module name exports funcs) =
     "function _" ++ name ++ "(){\nvar $ = this;\n" ++
-        concat (map show funcs) ++
+        concat (map (showJS c) funcs) ++
         concat (map export exports) ++
       "}\n" ++ name ++ " = new _" ++ name ++ "();\n"
     where
