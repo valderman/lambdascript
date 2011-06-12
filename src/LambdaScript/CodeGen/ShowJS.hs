@@ -49,13 +49,14 @@ instance ShowJS Var where
 
 instance ShowJS Exp where
   showJS c (Thunk ex) =
-    "function _(){if(_.x===$u){" ++ showSS c ex ++ "_.x=" ++ showJS c ex ++ ";}return _.x;}"
+    "{x:function(){" ++ showSS c ex ++ "this.e=1;this.x=" ++ showJS c ex ++ ";return this.x;}}"
   showJS c (IOThunk ex) =
-    "function _(){" ++ showSS c ex ++ "return " ++ showJS c ex ++ ";}"
+    "{x:function(){" ++ showSS c ex ++ "return " ++ showJS c ex ++ ";}}"
   showJS c (StmtEx ss ex) =
     showJS c ex
   showJS c (Eval ex) =
-    showJS c ex ++ "()"
+    let x = showJS c ex
+    in  "(" ++ x ++ ".e?" ++ x ++ ".x:" ++ x ++ ".x())"
   showJS c (Index ex ix) =
     showJS c ex ++ "[" ++ showJS c ix ++ "]"
   showJS c (Array exs) =
@@ -93,7 +94,7 @@ instance ShowJS Stmt where
     | otherwise =
       "return " ++ showJS c ex ++ "(" ++ intercalate "," (map (showJS c) args) ++ ");"
   showJS c (SelfThunk id ss) =
-    "if($u===$._" ++ id ++ ".x){" ++ concat (map (showJS c) ss) ++ ";}return $._" ++ id ++ ".x;"
+    concat (map (showJS c) ss) ++ "return $._" ++ id ++ ".x;"
   showJS c (Assign v@(Global _ id) ex) = showSS c ex ++ showJS c v ++ " = " ++ showJS c ex ++ ";\n"
   showJS c (Assign v ex)  = showSS c ex ++ "var " ++ showJS c v ++ " = " ++ showJS c ex ++ ";\n"
   showJS c (AssignResult v ex) =

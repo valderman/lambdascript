@@ -16,7 +16,8 @@ data Function = Function {
 instance ShowJS Function where
   showJS c f =
     "$._" ++ funName f ++ " = function(" ++ arglist ++ ")" ++
-    showJS c (Block $ stmts f) ++ ";\n"
+    showJS c (Block $ stmts f) ++ ";\n" ++
+    "$._" ++ funName f ++ ".x = $._" ++ funName f ++ ";"
     where
       arglist = intercalate "," (map (showJS c) (args f))
 

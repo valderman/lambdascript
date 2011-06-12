@@ -53,13 +53,14 @@ unThunkFunc fun@(Function n _ b t) =
     _ ->
       Function n [] [(SelfThunk n assignified)] t
   where
-    replaceLast [_] x'    = [x']
+    replaceLast [_] x'    = x'
     replaceLast (x:xs) x' = x : replaceLast xs x'
-    replaceLast _ x'      = [x']
+    replaceLast _ x'      = x'
 
     assignified =
       case last b of
         Return _ ex ->
-          replaceLast b (Assign (Global 0 $ n ++ ".x") ex)
+          replaceLast b [Assign (Global 0 $ n ++ ".e") $ Const $ NumConst 1,
+                         Assign (Global 0 $ n ++ ".x") ex]
         _ ->
           error $ "Last statement in lambda not return!\n" ++ show b
