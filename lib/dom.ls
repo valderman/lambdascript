@@ -42,8 +42,8 @@ setAttr e attr s = do {
   };
 
 -- Applies the given function to the value of the given attribute of the given
--- element and updates that attribute with the result. If the element doesn't
--- exist, the function does nothing.
+-- element and updates that attribute with the result. If the attribute doesn't
+-- exist, it gets created.
 updateAttr :: DOMElement -> String -> (String -> String) -> IO ();
 updateAttr e a f = do {
     s <- getAttr e a;
