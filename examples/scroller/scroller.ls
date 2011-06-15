@@ -4,18 +4,9 @@ import io;
 import std;
 import dom;
 
-update :: DOMElement -> Int -> IO ();
-update e t = do {
-    txt <- getAttr e "innerHTML";
-    setAttr e "innerHTML" (tail txt ++ [head txt]);
-    setTimeout (update e t) t;
+update t e = do {
+    updateAttr e "innerHTML" (\txt -> tail txt ++ [head txt]);
+    setTimeout (update t e) t;
   };
 
-scroll :: String -> Int -> IO ();
-scroll id t = do {
-    elem <- getElementById id;
-    case elem of
-      (Just e) -> update e t;
-      _        -> error ("No such element: " ++ id);
-      ;
-  };
+scroll id t = withElement id (update t);
