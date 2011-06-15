@@ -56,7 +56,7 @@ instance ShowJS Exp where
     showJS c ex
   showJS c (Eval ex) =
     let x = showJS c ex
-    in  "(" ++ x ++ ".e?" ++ x ++ ".x:" ++ x ++ ".x())"
+     in  "(" ++ x ++ ".e?" ++ x ++ ".x:" ++ x ++ ".x())"
   showJS c (Index ex ix) =
     showJS c ex ++ "[" ++ showJS c ix ++ "]"
   showJS c (Array exs) =
