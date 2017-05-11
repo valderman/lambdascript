@@ -2,7 +2,7 @@
 
 Lambdascript is, as you've probably figured out by looking at commit
 statistics, no longer active. It's been superceeded by Haste
-(http://ekblad.cc/haste) - a compiler that does actual Haskell.
+(https://haste-lang.org) - a compiler that does actual Haskell.
 
 
 ** About
